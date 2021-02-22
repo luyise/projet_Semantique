@@ -1,3 +1,11 @@
 
-*/*.cmi
-*/*.cmo
+*/*/*.cmi
+*/*/*.cmo
+*/main.cmi
+*/main.cmo
+project/frontend/lexer.ml
+project/frontend/parser.ml
+project/frontend/parser.mli
+project/._bcdi
+project/._d
+project/TP2.byte
