@@ -27,4 +27,6 @@ let main () =
   | _::filename::_ -> doit filename
   | _ -> invalid_arg "no source file specified"
 
-let _ = main ()
+(* let _ = main () *)
+
+let _ = Value_domain.print_test()

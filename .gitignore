@@ -1,4 +1,8 @@
 
+*/*/*.cmx
+*/*.cmx
+*/*/*.o
+*/*.o
 */*/*.cmi
 */*/*.cmo
 */main.cmi
@@ -7,5 +11,7 @@ project/frontend/lexer.ml
 project/frontend/parser.ml
 project/frontend/parser.mli
 project/._bcdi
+project/._ncdi
 project/._d
 project/TP2.byte
+project/main.exe

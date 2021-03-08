@@ -4,7 +4,7 @@
 # Ecole normale supérieure, Paris, France / CNRS / INRIA
 
 # Feel free to change it
-RESULT = TP2.byte
+RESULT = main.exe
 OCAMLYACC = menhir
 YFLAGS = --explain --table
 SOURCES = \
@@ -24,7 +24,13 @@ LIBS = zarith
 OCAMLBLDFLAGS = -I $(shell ocamlfind query zarith) -I $(shell ocamlfind query menhirLib) -g
 OCAMLFLAGS = -w +a-4-9 -g
 
-all: messages byte-code
+all: messages native-code
+
+clean2:
+	@rm -f *.cmi */*.cmi
+	@rm -f *.cmo */*.cmo
+	@rm -f *.o */*.o
+	@rm -f *.cmx */*.cmx
 
 messages: frontend/parser.messages
 	$(OCAMLYACC) $(YFLAGS) frontend/parser.mly --compile-errors frontend/parser.messages > frontend/parser_messages.ml
