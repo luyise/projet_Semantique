@@ -16,6 +16,7 @@ SOURCES = \
     frontend/abstract_syntax_tree.ml frontend/tree_to_cfg.ml \
 		frontend/parser_messages.ml \
     frontend/file_parser.ml frontend/file_parser.mli \
+    iterator/iterator.ml \
     main.ml
 
 

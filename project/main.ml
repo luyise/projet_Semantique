@@ -18,8 +18,8 @@ let doit filename =
   let prog = File_parser.parse_file filename in
   let cfg = Tree_to_cfg.prog prog in
   Printf.printf "%a" Cfg_printer.print_cfg cfg;
-  Cfg_printer.output_dot "cfg.dot" cfg
-
+  Cfg_printer.output_dot "cfg.dot" cfg;
+  Iterator.ConcreteIterator.iterate_cfg Format.std_formatter cfg
 
 (* parses arguments to get filename *)
 let main () =
@@ -27,6 +27,4 @@ let main () =
   | _::filename::_ -> doit filename
   | _ -> invalid_arg "no source file specified"
 
-(* let _ = main () *)
-
-let _ = Value_domain.print_test()
+let _ = main ()
