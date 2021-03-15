@@ -51,6 +51,10 @@ module type VALUE_DOMAIN =
     (* bottom value: empty set *)
     val bottom: t
 
+    val can_be_bot: t -> bool
+
+    val is_equal: t -> t -> bool
+
     (* constant: {c} *)
     val const: Z.t -> t
 
@@ -129,6 +133,8 @@ let can_be_true : bool_abst -> bool = Bool.mem BOOLTrue
 
 let can_be_false : bool_abst -> bool = Bool.mem BOOLFalse
 
+let can_be_bot : bool_abst -> bool = Bool.mem BOOLBot
+
 (* random in true/false *)
 let bool_rand : unit -> bool_abst = fun () -> bool_top
 
@@ -198,6 +204,18 @@ module ConcreteValues : VALUE_DOMAIN =
 
     (* bottom value: empty set *)
     let bottom : t = (VALBot : t)
+
+    let is_equal : t -> t -> bool = fun a b ->
+      match a,b with
+        | VALBot, VALBot -> true
+        | VALTop, VALTop -> true
+        | VALAny, VALAny -> true
+        | (VALNb n), (VALNb m) when Z.equal n m -> true
+        | _ -> false
+
+    let can_be_bot : t -> bool = fun x -> match x with
+        | VALBot | VALAny -> true
+        | _ -> false
 
     (* constant: {c} *)
     let const : Z.t -> t = fun n -> VALNb n

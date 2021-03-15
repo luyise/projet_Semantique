@@ -223,7 +223,7 @@ let print_cfg ch p =
       Printf.fprintf ch "  %i: at %s, in: "
         n.node_id  (string_of_position n.node_pos);
       List.iter (fun a -> Printf.fprintf ch "%i " a.arc_src.node_id) n.node_in;
-      Printf.fprintf ch "out:";
+      Printf.fprintf ch "out: ";
       List.iter (fun a -> Printf.fprintf ch "%i " a.arc_dst.node_id) n.node_out;
       Printf.fprintf ch "\n";
     ) p.cfg_nodes;
@@ -231,7 +231,8 @@ let print_cfg ch p =
   Printf.fprintf ch "List of arcs:\n";
   List.iter
     (fun a ->
-      Printf.fprintf ch "  %i -> %i: %a\n"
+      Printf.fprintf ch "  %i:  %i -> %i: %a\n"
+        a.arc_id
         a.arc_src.node_id a.arc_dst.node_id print_inst a.arc_inst
     ) p.cfg_arcs;
   Printf.fprintf ch "\n"

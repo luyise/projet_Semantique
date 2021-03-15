@@ -27,23 +27,35 @@ module type DOMAIN =
     (* initial environment (singleton), with all variables initialized to 0 *)
     val init: var list -> t
 
+    (* L : initialise un envronnement donnant à toutes les variables de la liste toutes les valeurs possibles *)
+    val init_any: var list -> t
+
+    (* L : initialise un envronnement donnant à toutes les variables de la liste la valeur non définie *)
+    val init_bot: var list -> t
+
     (* empty set of environments *)
     val bottom: t
 
     (* assign an integer expression to a variable *)
     val assign: t -> var -> int_expr -> t
 
-    (* filter environments to keep only those satisfying the boolean expression *)
-    val guard: t -> bool_expr -> t
+    (* filter environments to keep only those satisfying the boolean expression, et le spécifie si la condition n'est pas satisfiable *)
+    val guard: t -> bool_expr -> t * bool
 
     (* abstract join *)
     val join: t -> t -> t
+
+    (* L : abstract intersection *)
+    val inter: t -> t -> t
 
     (* widening *)
     val widen: t -> t -> t
 
     (* whether an abstract element is included in another one *)
     val subset: t -> t -> bool
+
+    (* L : test si deux abstractions d'environnement sont identiques *)
+    val is_equal: t -> t -> bool
 
     (* whether the abstract element represents the empty set *)
     val is_bottom: t -> bool
@@ -73,7 +85,26 @@ module Concrete : DOMAIN =
             Env.add x (V.const Z.zero : v) env
         )
         Env.empty
-        l      
+        l
+        
+    let init_any : var list -> t = fun l ->
+      List.fold_left
+        (
+          fun (env : t) (x : var) ->
+            Env.add x (V.any : v) env
+        )
+        Env.empty
+        l
+
+    let init_bot : var list -> t = fun l ->
+      List.fold_left
+        (
+          fun (env : t) (x : var) ->
+            Env.add x (V.bottom : v) env
+        )
+        Env.empty
+        l
+
 
     (* empty set of environments *)
     let bottom : t = Env.empty
@@ -119,11 +150,11 @@ module Concrete : DOMAIN =
         (* non-deterministic choice *)
         | CFG_bool_rand -> bool_rand ()
     
-    (* filter environments to keep only those satisfying the boolean expression *)
-    let guard : t -> bool_expr -> t = fun env e ->
+    (* filter environments to keep only those satisfying the boolean expression, L : et le spécifie si la condition n'est pas satisfiable *)
+    let guard : t -> bool_expr -> t * bool = fun env e ->
       let b = eval_bool_expr e env in
-      if can_be_true b then env
-      else bottom
+      if can_be_true b then env, true
+      else bottom, false
 
     let guard_opt : t -> bool_expr -> t * t = fun env e ->
       let b = eval_bool_expr e env in
@@ -135,13 +166,26 @@ module Concrete : DOMAIN =
 
     let merge_fun : var -> v option -> v option -> v option = fun _ v0 v1 ->
       match v0,v1 with
-        | None, _ | _, None -> None
+        | None, None -> None
+        | None, Some v0 | Some v0, None -> Some v0
         | Some v0, Some v1 when V.subset v0 v1 -> Some v1
         | Some v1, Some v0 when V.subset v0 v1 -> Some v1
-        | _ -> Some V.top
+        | Some v1, Some _ when V.can_be_bot v1 -> Some V.any
+        | Some _, Some v0 when V.can_be_bot v0 -> Some V.any
+        | Some _, Some _ -> Some V.top
+
+    let inter_fun : var -> v option -> v option -> v option = fun _ v0 v1 ->
+      match v0,v1 with
+        | None, _ | _, None -> None
+        | Some v0, Some v1 when V.subset v0 v1 -> Some v0
+        | Some v1, Some v0 when V.subset v0 v1 -> Some v0
+        | _ -> Some V.bottom
 
     (* abstract join *)
     let join : t -> t -> t = fun env0 env1 -> Env.merge merge_fun env0 env1
+
+    (* intersection abstraite *)
+    let inter : t -> t -> t = fun env0 env1 -> Env.merge inter_fun env0 env1
 
     (* widening *)
     let widen : t -> t -> t = join
@@ -157,6 +201,16 @@ module Concrete : DOMAIN =
         )
         env0
 
+    let is_equal : t -> t -> bool = fun env0 env1 ->
+      Env.for_all
+        (
+          fun (x : var) (n : v) ->
+            match Env.find_opt x env1 with
+              | None -> false
+              | Some m -> V.is_equal n m
+        )
+        env0
+
     (* whether the abstract element represents the empty set *)
     let is_bottom : t -> bool = Env.is_empty
 
@@ -164,6 +218,7 @@ module Concrete : DOMAIN =
       Format.fprintf fmt " %s = %a \n"
        ((x.var_name)^"("^(string_of_int (x.var_id))^")")
        (V.print) n
+
     (* prints *)
     let print : Format.formatter -> t -> unit = fun fmt env ->
       let _ = Format.fprintf fmt "état de l'environnement : \n" in

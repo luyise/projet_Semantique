@@ -17,9 +17,11 @@
 let doit filename =
   let prog = File_parser.parse_file filename in
   let cfg = Tree_to_cfg.prog prog in
-  Printf.printf "%a" Cfg_printer.print_cfg cfg;
-  Cfg_printer.output_dot "cfg.dot" cfg;
-  Iterator.ConcreteIterator.iterate_cfg Format.std_formatter cfg
+  Printf.printf "\n graphe de flot de controle (avec un éventuel rajout d'arc vers la fonction main) ";
+  let cfg1 = (Iterator.add_arc_to_main cfg) in
+  Printf.printf "%a" Cfg_printer.print_cfg cfg1;          (*Sans l'arc rajouté : cfg; *)
+  Cfg_printer.output_dot "cfg.dot" cfg1;                  
+  Iterator.ConcreteIterator.iterate_cfg Format.std_formatter cfg1
 
 (* parses arguments to get filename *)
 let main () =
