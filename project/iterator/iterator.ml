@@ -60,10 +60,9 @@ module type ITERATOR =
 
   end
 
-module ConcreteIterator =
+module MakeIterator(D : DOMAIN) =
   struct
     
-    module D = Concrete
     type env = D.t
     module Est = Map.Make(struct type t = node let compare = compare end)
     type t = env Est.t
