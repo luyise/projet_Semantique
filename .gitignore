@@ -15,6 +15,7 @@ project/._ncdi
 project/._d
 project/TP2.byte
 project/main.exe
+project/main
 
 project/*.pdf
 project/*.dot
