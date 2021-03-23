@@ -12,6 +12,8 @@
   You should modify this file to call your functions instead!
 *)
 
+let file = ref ""
+
 
 (* parse filename *)
 let doit filename =
@@ -26,8 +28,10 @@ let doit filename =
 
 (* parses arguments to get filename *)
 let main () =
-  match Array.to_list Sys.argv with
-  | _::filename::_ -> doit filename
-  | _ -> invalid_arg "no source file specified"
+  let spectlist = ["-display", Arg.Set Iterator.display, "enable display";
+  "-display_min", Arg.Set Iterator.display_minimal, "enable minimal display"]
+  in Arg.parse spectlist (fun f -> file := f) "";
+  if !file = "" then invalid_arg "no source file specified"
+  else doit !file
 
 let _ = main ()

@@ -153,6 +153,8 @@ module Concrete : DOMAIN =
     (* filter environments to keep only those satisfying the boolean expression, L : et le spécifie si la condition n'est pas satisfiable *)
     let guard : t -> bool_expr -> t * bool = fun env e ->
       let b = eval_bool_expr e env in
+      print_string (if can_be_true b then "true" else "false");
+      print_newline ();
       if can_be_true b then env, true
       else bottom, false
 

@@ -4,7 +4,9 @@
 # Ecole normale supérieure, Paris, France / CNRS / INRIA
 
 # Feel free to change it
+
 RESULT = main.exe
+
 OCAMLYACC = menhir
 YFLAGS = --explain --table
 SOURCES = \

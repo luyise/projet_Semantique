@@ -273,6 +273,7 @@ module ConcreteValues : VALUE_DOMAIN =
         | VALAny, (VALNb y) when (Z.equal y Z.zero) -> VALBot
         | VALAny, _ -> VALAny
         | VALTop, (VALNb y) when (Z.equal y Z.zero) -> VALBot
+        | VALTop, (VALNb _) -> VALTop
         | VALTop, VALTop -> VALAny
         | (VALNb x), (VALNb y) when not (Z.equal y Z.zero)-> VALNb (Z.div x y)
         | _ -> VALBot
@@ -284,9 +285,11 @@ module ConcreteValues : VALUE_DOMAIN =
         | VALAny, (VALNb y) when (Z.equal y Z.zero) -> VALBot
         | VALAny, _ -> VALAny
         | VALTop, (VALNb y) when (Z.equal y Z.zero) -> VALBot
+        | VALTop, (VALNb _) -> VALTop
         | VALTop, VALTop -> VALAny
         | (VALNb x), (VALNb y) when not (Z.equal y Z.zero)-> VALNb (Z.rem x y)
         | _ -> VALBot
+
 
     (* binary operation *)
     let binary : t -> t -> int_binary_op -> t = fun a b ibo ->
