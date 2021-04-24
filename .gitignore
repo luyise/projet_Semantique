@@ -19,3 +19,9 @@ project/main
 
 project/*.pdf
 project/*.dot
+
+*.vo
+*.vok
+*.vos
+*.glob
+.*.aux
