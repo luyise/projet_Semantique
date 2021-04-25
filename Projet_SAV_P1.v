@@ -201,19 +201,160 @@ Qed.
 Print List.map.
 Print List.nth.
 
+(* - 4 - *)
+
 (* On définit la fonction de substitution en parallèle :
 subst t i [u_0, u_1, ..., u_n] renvoie le terme t dans lequel on a substitué les variable i, i+1, ..., i+n par les termes respectifs u_0, u_1, ..., u_n *)
 Fixpoint subst_list (t : lambdaTermeN) (i : nat) (l : list lambdaTermeN) : lambdaTermeN :=
   match t return lambdaTermeN with
     | var x =>
-      if ((Nat.leb i x) && (Nat.leb x (i+(length l)))) then (List.nth (x-i) l t) else t
+      if ((Nat.leb i x) && (Nat.ltb x (i+(length l)))) then (List.nth (x-i) l t) else t
     | lambda t_0 =>
       lambda (subst_list t_0 (i+1) (List.map incr_free l))
     | app t_0 t_1 =>
       app (subst_list t_0 i l) (subst_list t_1 i l)
   end.
 
-Print list.
-Locate " :: ".
+Notation "t [ i <-- l ]" := (subst_list t i l) (at level 0).
 
-Eval compute in ( subst_list (lambda (lambda (app (var 1) (var 4)))) 1 ((var 2) :: (id) :: nil)).
+(* Eval compute in ( subst_list (lambda (lambda (app (var 1) (var 4)))) 1 ((var 2) :: (id) :: nil)). *)
+
+Proposition prop0 : forall t : lambdaTermeN, forall i : nat, t [ i <-- nil ] = t.
+Proof.
+  move => t.
+  induction t. rename n into x.
+  simpl. move => i.
+  assert ((Nat.leb i x && Nat.ltb x (i + 0))%bool = false).
+  replace (i+0) with i. 2 : lia.
+  unfold Nat.ltb.
+  unfold andb.
+  pose H := PeanoNat.Nat.le_gt_cases i x.
+  case H.
+  Search "leb".
+  destruct (PeanoNat.Nat.leb_le i x) as [_ Impl].
+  move => Leix. rewrite (Impl Leix).
+  destruct (PeanoNat.Nat.leb_gt (S x) i) as [_ Impl'].
+  apply Impl'. lia.
+  move => Ltxi.
+  destruct (PeanoNat.Nat.leb_gt i x) as [_ Impl].
+  rewrite (Impl Ltxi). reflexivity.
+  rewrite H. reflexivity.
+  simpl. move => i.
+  assert ((t) [i + 1 <-- nil] = t) as Eq.
+  exact (IHt (i+1)).
+  rewrite Eq. reflexivity.
+  simpl. move => i.
+  assert (((t1) [i <-- nil]) = t1).
+  apply IHt1.
+  assert (((t2) [i <-- nil]) = t2).
+  apply IHt2.
+  rewrite H H0. reflexivity.
+Qed.
+
+Proposition prop1 :
+  forall t : lambdaTermeN, forall i : nat, C[ i ]( t ) -> forall u : lambdaTermeN, t [ i <- u ] = t.
+Proof.
+  exact lemma5.
+Qed.
+
+Lemma lemma7 : forall t : lambdaTermeN, forall i : nat, t [ i <- (var i) ] = t.
+Proof.
+  induction t. rename n into x.
+  move => i.
+  simpl.
+  assert ((i = x) \/ (i <> x)) as Lem. lia.
+  case Lem.
+  destruct (PeanoNat.Nat.eqb_eq x i) as [_ Impl].
+  move => H.
+  assert (x = i). rewrite H. reflexivity. rewrite (Impl H0). rewrite H. reflexivity.
+  move => H.
+  destruct (PeanoNat.Nat.eqb_neq x i) as [_ Impl].
+  assert (x <> i). move => H'. apply H. rewrite H'. reflexivity. rewrite (Impl H0). reflexivity.
+  simpl.
+  unfold incr_free. unfold incr_free_with_linkDepth.
+  move => i.
+  assert (0 <= i) as C_Le0i. lia.
+  rewrite (Compare_dec.leb_correct 0 i C_Le0i).
+  replace (i+1) with (S i).
+  rewrite (IHt (S i)). reflexivity. lia.
+  move => i. simpl.
+  assert (((t1) [i <- var i]) = t1) as Eqt1. apply IHt1.
+  assert (((t2) [i <- var i]) = t2) as Eqt2. apply IHt2.
+  rewrite Eqt1 Eqt2. reflexivity.
+Qed.
+
+Lemma lemma8 :
+  forall t : lambdaTermeN, forall i : nat, forall u : lambdaTermeN, (t) [i <-- u :: nil] = (t) [i <- u].
+Proof.
+  induction t. rename n into x.
+  move => i u.
+  unfold subst, subst_list.
+  replace (length (u :: nil)) with 1.
+  2 : compute. 2 : reflexivity.
+  replace ((Nat.leb i x && Nat.ltb x (i + 1))%bool) with (Nat.eqb x i).
+  assert ((Nat.eqb x i = true) \/ (Nat.eqb x i = false)) as Disj.
+  case (Nat.eqb x i). left. reflexivity.
+  right. reflexivity.
+  case Disj.
+  move => H_xeqi.
+  rewrite H_xeqi.
+  destruct (PeanoNat.Nat.eqb_eq x i) as [Impl _].
+  rewrite (Impl H_xeqi). replace (i - i) with 0. 2 : lia.
+  simpl. reflexivity.
+  move => H_xneqi. rewrite H_xneqi. reflexivity.
+  unfold andb.
+  assert (i<=x \/ x<i) as Disj1. lia.
+  case Disj1.
+  move => Hileqx.
+  destruct (PeanoNat.Nat.leb_le i x) as [_ Impl].
+  rewrite (Impl Hileqx).
+  unfold Nat.ltb.
+  replace (i + 1) with (S i).
+  simpl. assert (x<=i \/ i<x) as Disj2. lia.
+  case Disj2.
+  move => Hxleqi.
+  assert (x = i) as Eqix. lia.
+  destruct (PeanoNat.Nat.eqb_eq x i) as [_ Impl1].
+  rewrite (Impl1 Eqix).
+  destruct (PeanoNat.Nat.leb_le x i) as [_ Impl2].
+  rewrite (Impl2 Hxleqi). reflexivity.
+  2 : lia.
+  move => Hiltx.
+  destruct (PeanoNat.Nat.leb_gt x i) as [_ Impl1].
+  rewrite (Impl1 Hiltx).
+  destruct (PeanoNat.Nat.eqb_neq x i) as [_ Impl2].
+  assert (x<>i). lia. rewrite (Impl2 H). reflexivity.
+  move => Hxlti.
+  assert (x<=i \/ i<x) as Disj2. lia.
+  replace (i + 1) with (S i). unfold Nat.ltb. simpl.
+  case Disj2.
+  replace (i + 1) with (S i). 2, 4 : lia.
+  move => _.
+  destruct (PeanoNat.Nat.eqb_neq x i) as [_ Impl1].
+  assert (x<>i). lia. rewrite (Impl1 H).
+  destruct (PeanoNat.Nat.leb_gt i x) as [_ Impl2].
+  rewrite (Impl2 Hxlti). reflexivity.
+  move => H_absurd.
+  apply False_ind. lia.
+  move => i u. simpl.
+  assert (((t) [i + 1 <-- incr_free u :: nil]) = (t) [i + 1 <- incr_free u]) as Eq.
+  2 : rewrite Eq. 2 : reflexivity.
+  apply IHt.
+  move => i u. simpl.
+  assert (((t1) [i <-- u :: nil]) = t1 [i <- u]). apply IHt1.
+  assert (((t2) [i <-- u :: nil]) = t2 [i <- u]). apply IHt2.
+  rewrite H H0. reflexivity.
+Qed.
+
+Proposition prop2 :
+   forall l : list lambdaTermeN, forall t : lambdaTermeN, forall i : nat,
+  (List.Forall (hasAllFreeVarUnder i) (List.tl l)) ->
+    t [ i <-- l ] = ( t [ (1+i) <-- (List.tl l) ] ) [ i <- List.hd (var i) l ].
+Proof.
+  move => l. induction l.
+  move => t i _. simpl.
+  rewrite prop0. rewrite prop0.
+  rewrite (lemma7 t i). reflexivity.
+  move => t i. simpl.
+  Print List.Forall_ind.
+  
