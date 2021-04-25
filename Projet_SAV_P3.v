@@ -198,3 +198,159 @@ Proof.
   trivial.
 Qed.
 
+Fixpoint size (e: stack) : nat :=
+  match e return nat with
+    | empty => 0
+    | element _ tl => S (size tl)
+end.
+
+Definition code_correctness: codeBloc -> stack -> Prop := 
+  fun c e => C[ size e]( tau_code c).
+
+Fixpoint stack_correctness (s: stack): Prop :=
+  match s with
+    | empty => True 
+    | element (c_0, e_0) tl => (code_correctness c_0 e_0) /\ stack_correctness e_0 /\ stack_correctness tl
+end.
+
+Definition state_correctness: krivineState -> Prop := 
+  fun ks => match ks with 
+    | (c, e, s) => code_correctness c e /\ stack_correctness e /\ stack_correctness s
+end.
+
+Lemma option_equality_lemma: forall A : Type, forall (a1 a2: A), Some a1 = Some a2 -> a1 = a2.
+Proof.
+  move => A a1 a2.
+  case.
+  trivial.
+Qed.
+
+Lemma tuple_eq_is_eq: forall (A B : Type) (a1 a2 : A) (b1 b2 : B),
+      (a1, b1) = (a2, b2) <-> a1 = a2 /\ b1 = b2.
+Proof.
+  move => A B.
+  split. move => H . split.
+  replace a1 with (fst (a1, b1)); replace a2 with (fst (a2, b2)); trivial.
+  rewrite H.
+  trivial.
+  replace b1 with (snd (a1, b1)); replace b2 with (snd (a2, b2)); trivial.
+  rewrite H; trivial.
+  move => H. destruct H.
+  rewrite H. rewrite H0.
+  trivial.
+Qed.
+
+Lemma triple_eq_is_eq: forall (A B C: Type) (a1 a2 : A) (b1 b2 : B) (c1 c2 : C),
+  (a1, b1, c1) = (a2, b2, c2) <-> a1 = a2 /\ b1 = b2 /\ c1 = c2.
+  move => A B C.
+  split.
+  move => H.
+  split.
+  replace a1 with (fst (fst ((a1, b1), c1))); replace a2 with (fst (fst ((a2, b2), c2))); trivial.
+  rewrite H; trivial.
+  split.
+  replace b1 with (snd (fst ((a1, b1), c1))); replace b2 with (snd (fst ((a2, b2), c2))); trivial.
+  rewrite H; trivial.
+  replace c1 with (snd ((a1, b1), c1)); replace c2 with (snd ((a2, b2), c2)); trivial.
+  rewrite H; trivial.
+  move => H. destruct H; destruct H0.
+  rewrite H; rewrite H0; rewrite H1.
+  trivial.
+Qed.
+
+Lemma correctness_preserved: forall ks: krivineState, forall nks: krivineState, state_correctness ks -> (transitionFunction ks = Some nks) -> state_correctness nks.
+Proof.
+  unfold krivineState.
+  move => ks nks.
+  case ks.
+  move => p_0 s_0.
+  case p_0.
+  move => c_0 e_0.
+  case nks; move => p_1 s_1; case p_1; move => c_1 e_1.
+  case c_0; simpl.
+  case e_0; simpl.
+  move => n _.
+  case n; discriminate.
+  move => p_2 s n.
+  case n; simpl.
+  case p_2.
+  move => c s0 H1 Eq.
+  destruct H1 as [cc_1 [[cc_c_s0 [sc_s0 sc_s]] sc_s_0]].
+  suff: (c = c_1) /\ (s0 = e_1) /\ (s_0 = s_1).
+  move => [c_is_c1 [s0_is_e1 s_0_is_s_1]].
+  rewrite <- c_is_c1; rewrite <- s0_is_e1; rewrite <- s_0_is_s_1.
+  split; trivial; split; trivial.
+  apply triple_eq_is_eq.
+  apply option_equality_lemma.
+  trivial.
+  
+  case p_2.
+  move => c s0 n0 H Eq.
+  destruct H; destruct H0; destruct H0; destruct H2.
+  suff: (access n0 = c_1) /\ (s = e_1) /\ (s_0 = s_1).
+  move => [c_is_acc [s0_is_e1 s_0_is_s_1]].
+  rewrite <- c_is_acc; rewrite <- s0_is_e1; rewrite <- s_0_is_s_1.
+  split.
+  unfold code_correctness; simpl.
+  unfold code_correctness in H; simpl in H.
+  unfold hasAllFreeVarUnder; unfold hasAllFreeVarUnder in H.
+  simpl; simpl in H.
+  lia.
+  split; trivial.
+  apply triple_eq_is_eq.
+  apply option_equality_lemma.
+  trivial.
+
+
+  case s_0.
+  discriminate.
+
+  move => p s c.
+  case p.
+  move => c0 s0.
+  simpl.
+  unfold code_correctness; simpl.
+  (*unfold hasAllFreeVarUnder; simpl.*)
+  move => H Eq.
+  destruct H; destruct H0; destruct H1; destruct H2.
+  suff: (c = c_1) /\ (element (c0, s0) e_0 = e_1) /\ (s = s_1).
+  move => [c_is_c1 [e0_is_e1 s_is_s1]].
+  rewrite <- c_is_c1; rewrite <- e0_is_e1; rewrite <- s_is_s1.
+  split; trivial.
+  simpl.
+
+
+  move => H_correct.
+  destruct H_correct as [H_1 H_temp].
+  destruct H_temp as [H_2 H_3].
+  case c_0.
+  move => n.
+  case n.
+  case e_0.
+  discriminate.
+  move => p_2.
+  move => tl.
+  assert (element p_2 tl = e_0).
+  case p_2.
+  move => c_2 e_2.
+  move => unknown.
+  move => option_eq.
+  split.
+  
+  split.
+  simpl.
+
+  move n_0; discriminate.
+
+
+
+  move => H_trans.
+  unfold state_correctness.
+  move => H1.
+  compute in H1.
+  move => H2.
+  unfold state_correctness.
+  decompose H1.
+  simpl.
+Admitted.
+
