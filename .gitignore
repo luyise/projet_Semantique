@@ -25,3 +25,5 @@ project/*.dot
 *.vos
 *.glob
 .*.aux
+
+.lia.cache
