@@ -24,16 +24,16 @@ Fixpoint linkDepth (t : lambdaTermeN) : nat :=
 Definition id : lambdaTermeN := lambda (var 0).
 
 (* [ prop_aux_with_linkDepth n d t ] renvoie la proposition correspondant à
-  "dans le sous-terme t, apparaissant sous d lambdas dans un terme, toutes les variables libres sont d'indice <= n" *)
+  "dans le sous-terme t, apparaissant sous d lambdas dans un terme, toutes les variables libres sont d'indice < n" *)
 Fixpoint prop_aux_with_linkDepth (n : nat) (d : nat) (t : lambdaTermeN) : Prop :=
   match t return Prop with
-    | var x => (x>n -> x<d)
+    | var x => (x < n+d)
     | lambda t_0 => (prop_aux_with_linkDepth n (d+1) t_0)
     | app t_0 t_1 => (prop_aux_with_linkDepth n d t_0) /\ (prop_aux_with_linkDepth n d t_1)
   end.
 
 (* hasAllFreeVarUnder n t renvoie la proposition correspondant à 
-  "dans le terme t, toutes les variables libres sont d'indice <= n" *)
+  "dans le terme t, toutes les variables libres sont d'indice < n" *)
 Definition hasAllFreeVarUnder : nat -> lambdaTermeN -> Prop :=
   fun n => prop_aux_with_linkDepth n 0.
 
@@ -62,6 +62,8 @@ Qed.
 (* isClosed t donne la proposition correspondant à "t est un terme clos" *)
 Definition isClosed t := C[0](t).
 
+(* - 3 - *)
+
 (*
 Ici, on définit une convention sur l'interprétation des termes.
 A priori, pour le terme app (var 1) (lambda (var 1)) ou app (var 1) (lambda (var 2)) rien ne permet d'identifier les variables 1 et/ou 2.
@@ -71,8 +73,6 @@ et dans app (lambda (lambda (app (var 1) (lambda (var 2))))) (var 2) lors d'une 
 Donc on choisit la convention que chaque lambda incrémente de 1 les valeurs représentant les variables libres auquelles elles font référence.
 Par exemple lambda (app (lambda (var 2)) (var 1)) s'interprète comme le lambda-Terme lambdaX.((lambdaY. Z) Z) 
 *)
-
-(* remarque : dans la suite on utilise Nat.eqb, Nat.leb pour obtenir un résultat booléen et non propositionnel pour (3 = 4) *)
 
 (* incr_free_with_linkDepth d u ncrémente toutes les variables libres de u en tant que sous terme d'un
   autre terme, apparaissant sous une profondeur de d lambdas. *)
@@ -87,7 +87,7 @@ Fixpoint incr_free_with_linkDepth (d : nat) (u : lambdaTermeN) :=
 Definition incr_free t := incr_free_with_linkDepth 0 t. 
 
 (* On définit la fonction de substitution :
-subst t y u renvoie le terme t dans lequel on a substitué la variable y (au sens discuté précédemment par le terme u *)
+subst t y u renvoie le terme t dans lequel on a substitué la variable y (au sens discuté précédemment) par le terme u *)
 Fixpoint subst (t : lambdaTermeN) (y : nat) (u : lambdaTermeN) : lambdaTermeN := 
   match t return lambdaTermeN with
     | var x =>
@@ -100,10 +100,124 @@ Fixpoint subst (t : lambdaTermeN) (y : nat) (u : lambdaTermeN) : lambdaTermeN :=
 
 Notation "t [ y <- u ]" := (subst t y u) (at level 0).
 
-(*
-Eval compute in id.
-Eval compute in ( ((app (lambda (var 1)) (var 1))) [ 0 <- id ] ).
-*)
+(* On va montrer le résultat attendu, pour cela, on a besoin de quelques lemmes techniques *)
+
+Lemma lemma2 : forall n m : nat, n < m -> Nat.eqb n m = false.
+Proof.
+  move => n m.
+  move => Ltnm.
+  destruct (PeanoNat.Nat.eqb_neq n m).
+  apply H0.
+  lia.
+Qed.
+
+Lemma lemma3 :
+  forall t : lambdaTermeN, forall n d : nat,
+    (prop_aux_with_linkDepth n (d+1) t) -> prop_aux_with_linkDepth (n+1) d t.
+Proof.
+  induction t. rename n into x.
+  simpl.
+  move => n d.
+  lia.
+  move => n d.
+  simpl.
+  apply IHt.
+  simpl.
+  split; destruct H as [H_1 H_2]. apply IHt1. trivial.
+  apply IHt2; trivial.
+Qed.
+
+(* Un des lemmes les plus important conceptuellement : *)
+
+Lemma lemma4 : forall t : lambdaTermeN, forall n : nat, C[n]( lambda t ) -> C[n+1]( t ).
+Proof.
+  unfold hasAllFreeVarUnder.
+  induction t. rename n into x.
+  move => n.
+  simpl. lia.
+  move => n.
+  simpl. exact (lemma3 t n 1).
+  move => n.
+  simpl; split;
+  destruct H as [H_1 H_2];
+  apply lemma3; simpl; trivial.
+Qed.
+
+Lemma lemma5 : 
+  forall t : lambdaTermeN, forall n : nat, C[ n ]( t ) -> forall u : lambdaTermeN, t [ n <- u ] = t.
+Proof.
+  induction t. rename n into x.
+  move => n.
+  unfold hasAllFreeVarUnder.
+  simpl.
+  move => Ltxn.
+  assert (x < n).
+  lia. clear Ltxn. rename H into Ltxn.
+  move => u.
+  rewrite (lemma2 x n Ltxn); reflexivity.
+  move => n Cnlambdat u.
+  simpl. assert ((t) [n + 1 <- incr_free u] = t).
+  pose CSnt := lemma4 t n Cnlambdat.
+  apply IHt. exact CSnt.
+  rewrite H; reflexivity.
+  move => n.
+  unfold hasAllFreeVarUnder.
+  simpl.
+  case; move => Ht1 Ht2.
+  assert (hasAllFreeVarUnder n t1); unfold hasAllFreeVarUnder. assumption.
+  assert (hasAllFreeVarUnder n t2); unfold hasAllFreeVarUnder. assumption.
+  move => u. 
+  assert ((t1) [ n <- u ] = t1) as Eqt1.
+  apply IHt1. assumption.
+  assert ((t2) [ n <- u ] = t2) as Eqt2.
+  apply IHt2. assumption.
+  rewrite Eqt1 Eqt2; reflexivity.
+Qed.
+
+Lemma lemma6 :
+  forall t : lambdaTermeN, isClosed t -> forall n : nat, C[n](t).
+Proof.
+  move => t.
+  induction n.
+  unfold isClosed in H; assumption.
+  replace (S n) with (n + 1).
+  apply lemma1; assumption.
+  lia.
+Qed.
+
+Theorem theorem0 : 
+  forall t : lambdaTermeN, isClosed t -> (forall y : nat, forall u : lambdaTermeN, t [ y <- u ] = t).
+Proof.
+  move => t.
+  unfold isClosed.
+  move => Ht.
+  move => y.
+  assert C[y](t) as Cyt.
+  apply lemma6.
+  unfold isClosed; assumption.
+  apply lemma5; assumption.
+Qed.
+
+Print List.map.
+Print List.nth.
+
+(* On définit la fonction de substitution en parallèle :
+subst t i [u_0, u_1, ..., u_n] renvoie le terme t dans lequel on a substitué les variable i, i+1, ..., i+n par les termes respectifs u_0, u_1, ..., u_n *)
+Fixpoint subst_list (t : lambdaTermeN) (i : nat) (l : list lambdaTermeN) : lambdaTermeN :=
+  match t return lambdaTermeN with
+    | var x =>
+      if ((Nat.leb i x) && (Nat.leb x (i+(length l)))) then (List.nth (x-i) l t) else t
+    | lambda t_0 =>
+      lambda (subst_list t_0 (i+1) (List.map incr_free l))
+    | app t_0 t_1 =>
+      app (subst_list t_0 i l) (subst_list t_1 i l)
+  end.
+
+Print list.
+Locate " :: ".
+
+Eval compute in ( subst_list (lambda (lambda (app (var 1) (var 4)))) 1 ((var 2) :: (id) :: nil)).
+
 
 
 
@@ -218,10 +332,14 @@ Definition state_correctness: krivineState -> Prop :=
     | (c, e, s) => code_correctness c e /\ stack_correctness e /\ stack_correctness s
 end.
 
-Lemma option_equality_lemma: forall A : Type, forall (a1 a2: A), Some a1 = Some a2 -> a1 = a2.
+Lemma option_equality_lemma: forall A : Type, forall (a1 a2: A), Some a1 = Some a2 <-> a1 = a2.
 Proof.
   move => A a1 a2.
+  split.
   case.
+  trivial.
+  move => H.
+  rewrite H.
   trivial.
 Qed.
 
@@ -258,6 +376,78 @@ Lemma triple_eq_is_eq: forall (A B C: Type) (a1 a2 : A) (b1 b2 : B) (c1 c2 : C),
   trivial.
 Qed.
 
+Lemma some_triple_to_eq: forall (A B C: Type) (a1 a2: A) (b1 b2: B) (c1 c2: C),
+  Some (a1, b1, c1) = Some (a2, b2, c2) <-> a1 = a2 /\ b1 = b2 /\ c1 = c2.
+Proof.
+  move => A B C a1 a2 b1 b2 c1 c2.
+  split.
+  move => H.
+  apply triple_eq_is_eq; apply option_equality_lemma; trivial.
+  move => H.
+  apply option_equality_lemma; apply triple_eq_is_eq; trivial.
+Qed.
+
+Lemma correctness_propagation: forall (c1 c2: codeBloc), forall (e1 e2 s1 s2: stack),
+  code_correctness c1 e1 /\ stack_correctness e1 /\ stack_correctness s1 /\ Some (c1, e1, s1) = Some (c2, e2, s2) -> code_correctness c2 e2 /\ stack_correctness e2 /\ stack_correctness s2.
+Proof.
+  move => c1 c2 e1 e2 s1 s2 H.
+  destruct H; destruct H0; destruct H1.
+  suff: c1 = c2 /\ e1 = e2 /\ s1 = s2.
+  move => [E1 [E2 E3]].
+  rewrite <- E1; rewrite <- E2; rewrite <- E3.
+  auto.
+  apply some_triple_to_eq.
+  trivial.
+Qed.
+
+Lemma stack_correctness_propagation: forall c: codeBloc, forall (e s : stack), stack_correctness s /\ stack_correctness e /\ code_correctness c e -> stack_correctness (element (c, e) s).
+Proof.
+  move => c e s H.
+  destruct H; destruct H0.
+  simpl.
+  split; trivial.
+  split; trivial.
+Qed.
+
+Lemma code_correctness_propagation_access: forall n: nat, forall s: stack, forall p: codeBloc * stack, code_correctness (access (S n)) (element p s) -> code_correctness (access n) s.
+Proof.
+  move => n s p.
+  unfold code_correctness; simpl.
+  unfold hasAllFreeVarUnder; simpl.
+  lia.
+Qed.
+
+Lemma code_correctness_propagation_grab: forall (c c0: codeBloc), forall (e s: stack), code_correctness (grab c) s -> code_correctness c (element (c0, e) s).
+Proof.
+  move => c c0 e s.
+  unfold code_correctness; simpl.
+  move => H.
+  replace (S (size s)) with (size s + 1).
+  apply (lemma4 (tau_code c) (size s)).
+  trivial.
+  lia.
+Qed.
+
+Lemma code_correctness_propagation_push1: forall (c1 c2: codeBloc), forall (e: stack), code_correctness (push c1 c2) e -> code_correctness c1 e.
+Proof.
+  move => c1 c2 e.
+  unfold code_correctness.
+  unfold hasAllFreeVarUnder.
+  simpl.
+  move => [H1 H2].
+  trivial.
+Qed.
+
+Lemma code_correctness_propagation_push2: forall (c1 c2: codeBloc), forall (e: stack), code_correctness (push c1 c2) e -> code_correctness c2 e.
+Proof.
+  move => c1 c2 e.
+  unfold code_correctness.
+  unfold hasAllFreeVarUnder.
+  simpl.
+  move => [H1 H2].
+  trivial.
+Qed.
+
 Lemma correctness_preserved: forall ks: krivineState, forall nks: krivineState, state_correctness ks -> (transitionFunction ks = Some nks) -> state_correctness nks.
 Proof.
   unfold krivineState.
@@ -276,31 +466,17 @@ Proof.
   case p_2.
   move => c s0 H1 Eq.
   destruct H1 as [cc_1 [[cc_c_s0 [sc_s0 sc_s]] sc_s_0]].
-  suff: (c = c_1) /\ (s0 = e_1) /\ (s_0 = s_1).
-  move => [c_is_c1 [s0_is_e1 s_0_is_s_1]].
-  rewrite <- c_is_c1; rewrite <- s0_is_e1; rewrite <- s_0_is_s_1.
-  split; trivial; split; trivial.
-  apply triple_eq_is_eq.
-  apply option_equality_lemma.
-  trivial.
+  apply (correctness_propagation c c_1 s0 e_1 s_0 s_1).
+  auto.
   
   case p_2.
   move => c s0 n0 H Eq.
   destruct H; destruct H0; destruct H0; destruct H2.
-  suff: (access n0 = c_1) /\ (s = e_1) /\ (s_0 = s_1).
-  move => [c_is_acc [s0_is_e1 s_0_is_s_1]].
-  rewrite <- c_is_acc; rewrite <- s0_is_e1; rewrite <- s_0_is_s_1.
+  apply (correctness_propagation (access n0) c_1 s e_1 s_0 s_1).
   split.
-  unfold code_correctness; simpl.
-  unfold code_correctness in H; simpl in H.
-  unfold hasAllFreeVarUnder; unfold hasAllFreeVarUnder in H.
-  simpl; simpl in H.
-  lia.
-  split; trivial.
-  apply triple_eq_is_eq.
-  apply option_equality_lemma.
+  pose H4 := code_correctness_propagation_access n0 s (c, s0) H.
   trivial.
-
+  auto.
 
   case s_0.
   discriminate.
@@ -309,48 +485,23 @@ Proof.
   case p.
   move => c0 s0.
   simpl.
-  unfold code_correctness; simpl.
-  (*unfold hasAllFreeVarUnder; simpl.*)
-  move => H Eq.
-  destruct H; destruct H0; destruct H1; destruct H2.
-  suff: (c = c_1) /\ (element (c0, s0) e_0 = e_1) /\ (s = s_1).
-  move => [c_is_c1 [e0_is_e1 s_is_s1]].
-  rewrite <- c_is_c1; rewrite <- e0_is_e1; rewrite <- s_is_s1.
+  move => [H [H0 [H1 [H2 H3]]]] Eq.
+  apply (correctness_propagation c c_1 (element (c0, s0) e_0) e_1 s s_1).
+  split.
+
+  apply code_correctness_propagation_grab; trivial.
+  simpl; auto.
+
+  move => c c0 [H [H0 H1]] Eq.
+  apply (correctness_propagation c0 c_1 e_0 e_1 (element (c, e_0) s_0) s_1).
+  split.
+  apply (code_correctness_propagation_push2 c c0 e_0); trivial.
   split; trivial.
-  simpl.
+  split; trivial.
+  apply stack_correctness_propagation.
+  pose H2 := code_correctness_propagation_push1 c c0 e_0 H.
+  auto.
+Qed.
 
 
-  move => H_correct.
-  destruct H_correct as [H_1 H_temp].
-  destruct H_temp as [H_2 H_3].
-  case c_0.
-  move => n.
-  case n.
-  case e_0.
-  discriminate.
-  move => p_2.
-  move => tl.
-  assert (element p_2 tl = e_0).
-  case p_2.
-  move => c_2 e_2.
-  move => unknown.
-  move => option_eq.
-  split.
-  
-  split.
-  simpl.
-
-  move n_0; discriminate.
-
-
-
-  move => H_trans.
-  unfold state_correctness.
-  move => H1.
-  compute in H1.
-  move => H2.
-  unfold state_correctness.
-  decompose H1.
-  simpl.
-Admitted.
 
