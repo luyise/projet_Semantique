@@ -1,5 +1,7 @@
 Require Import Lia.
 Require Import ssreflect.
+Require Import ssrfun.
+Require Import Coq.ssr.ssrbool.
 
 (* Partie 1 : Indices de De Bruijn et manipulation de lambdaTerme *)
 
@@ -346,15 +348,183 @@ Proof.
   rewrite H H0. reflexivity.
 Qed.
 
-Proposition prop2 :
-   forall l : list lambdaTermeN, forall t : lambdaTermeN, forall i : nat,
-  (List.Forall (hasAllFreeVarUnder i) (List.tl l)) ->
-    t [ i <-- l ] = ( t [ (1+i) <-- (List.tl l) ] ) [ i <- List.hd (var i) l ].
+(* On définit une proposition pour la preuve du lemme suivant *)
+Definition P i l := (forall t : lambdaTermeN, forall u_0 : lambdaTermeN,
+  (t [ i <-- (u_0 :: l) ] = ( t [ (1+i) <-- l ] ) [ i <- List.hd (var i) (u_0 :: l) ])).
+Check P.
+
+Lemma lemma9 :
+  forall x : nat, forall i : nat, (i = x) -> forall u : lambdaTermeN, (var x) [i <- u] = u.
 Proof.
-  move => l. induction l.
-  move => t i _. simpl.
-  rewrite prop0. rewrite prop0.
-  rewrite (lemma7 t i). reflexivity.
-  move => t i. simpl.
-  Print List.Forall_ind.
+  move => x i eq u.
+  unfold subst. destruct (PeanoNat.Nat.eqb_eq x i) as [_ Impl1].
+  rewrite Impl1. rewrite eq. reflexivity. reflexivity.
+Qed.
+
+Lemma lemma10 :
+  forall x : nat, forall i : nat, (i <> x) -> forall u : lambdaTermeN, (var x) [i <- u] = (var x).
+Proof.
+  move => x i ineq u.
+  unfold subst. destruct (PeanoNat.Nat.eqb_neq x i) as [_ Impl1].
+  rewrite Impl1. 2 : reflexivity. move => H. apply ineq. rewrite H. reflexivity.
+Qed.
+
+Lemma lemma11 :
+  forall x : nat, forall i : nat, forall l : list lambdaTermeN,
+    i <= x -> x < (i + (length l)) ->
+      ((var x) [i <-- l] = (List.nth (x-i) l (var x))).
+Proof.
+  move => x i l H_ineq1 H_ineq2.
+  unfold subst_list.
+  assert ((Nat.leb i x && Nat.ltb x (i + (length l)))%bool = true).
+  apply /andP.
+  split; apply PeanoNat.Nat.leb_le; assumption.
+  rewrite H. reflexivity.
+Qed.
+
+Lemma lemma12 :
+  forall x : nat, forall i : nat, forall l : list lambdaTermeN,
+    i > x \/ x >= (i + (length l)) ->
+      ((var x) [i <-- l] = (var x)).
+Proof.
+  move => x i l H.
+  unfold subst_list.
+  assert ((Nat.leb i x && Nat.ltb x (i + (length l)))%bool = false).
+  case H.
+  move => H_i_gt_x. apply /andP.
+  move => H'. destruct H' as [H_0 H_1].
+  assert (i<=x). apply PeanoNat.Nat.leb_le. assumption. lia.
+  move => H_x_ge_ipll. apply /andP.
+  move => H'. destruct H' as [H_0 H_1].
+  assert (x<(i + (length l))). apply PeanoNat.Nat.ltb_lt. assumption. lia.
+  rewrite H0. reflexivity.
+Qed.
+
+Lemma lemma13 :
+  forall i : nat, forall l : list lambdaTermeN, 
+  (List.Forall (hasAllFreeVarUnder i) (l)) ->
+  forall x : nat, forall j : nat, (j <= x) -> (x < (j + (length l))) -> C[i]( (var x) [ j <-- l ] ).
+Proof.
+  move => i l H. induction H as [ | u_0 l H_u0 H_l IHl].
+  move => x j Ineq Absurdity. simpl in Absurdity. apply False_ind. lia.
+  move => x j Ineq_0 Ineq_1.
+  compare j x.
+  move => Eq. rewrite lemma11. lia. lia.
+  replace (x-j) with 0. 2 : lia. simpl. assumption.
+  move => Ineq_2. assert (j < x) as Ineq_3. lia.
+  rewrite lemma11. lia. lia.
+  replace (x - j) with (S (x - (j + 1))). 2 : lia.
+  simpl. assert (x < (j+1) + (length l)) as Ineq_4. simpl in Ineq_1. lia.
+  assert (j+1 <= x) as Ineq_5. lia.
+  pose H_rec := IHl x (j+1) Ineq_5 Ineq_4.
+  pose Lem11 := (lemma11 x (j+1) l Ineq_5 Ineq_4).
+  replace ((var x) [j + 1 <-- l]) with (List.nth (x - (j + 1)) l (var x)) in H_rec.
+  assumption.
+Qed.
+
+Lemma lemma14 :
+  forall t : lambdaTermeN, forall i : nat, forall d : nat, 
+  prop_aux_with_linkDepth i d t ->
+  prop_aux_with_linkDepth (i + 1) d (incr_free_with_linkDepth d t).
+Proof.
+  induction t.
+  move => i d. simpl.
+  assert (d<=n \/ n<d) as Disj. lia.
+    case Disj. move => Ineq_0 Ineq_1.
+    assert (Nat.leb d n = true).
+    rewrite PeanoNat.Nat.leb_le. trivial. rewrite H. clear H.
+    simpl. lia.
+    move => Ineq_0 Ineq_1.
+    assert (Nat.leb d n = false).
+    rewrite PeanoNat.Nat.leb_gt. trivial. rewrite H. clear H.
+    simpl. lia.
+  move => i d. simpl. replace (S d) with (d + 1). 2 : lia. apply IHt.
+  move => i d. simpl. case.
+  move => Ht1 Ht2. split.
+  apply IHt1. trivial.
+  apply IHt2. trivial.
+Qed.
+
+Lemma lemma15 :
+  forall i : nat, forall t : lambdaTermeN,
+  C[ i ]( t ) -> C[i + 1](incr_free t).
+Proof.
+  move => i t. exact (lemma14 t i 0).
+Qed.
+
+Lemma Forall_map :
+  forall A B : Type, forall f : A -> B, forall P : A -> Prop, forall Q : B -> Prop,
+    (forall a : A, P a -> Q (f a)) -> forall l : list A, List.Forall P l -> List.Forall Q (List.map f l).
+Proof.
+  move => A B f P Q H l.
+  induction l.
+  simpl; trivial.
+  simpl.
+  move => LFP.
+  pose tl := (List.map f l).
+  apply List.Forall_cons.
+  apply List.Forall_inv in LFP.
+  auto.
+  apply List.Forall_inv_tail in LFP.
+  auto.
+Qed.
+
+Lemma lemma16 :
+  forall t : lambdaTermeN, forall i : nat, forall l : list lambdaTermeN, 
+  (List.Forall (hasAllFreeVarUnder i) (l)) -> (forall u_0 : lambdaTermeN,
+  (t [ i <-- (u_0 :: l) ] = ( t [ (1+i) <-- l ] ) [ i <- List.hd (var i) (u_0 :: l) ])).
+Proof.
+  move => t. induction t.
   
+  rename n into x.
+  move => i l H_C_i_l u_0.
+  replace (List.hd (var i) (u_0 :: l)) with u_0. 2 : simpl. 2 : reflexivity.
+  assert ((i <= x /\ x < (i + (length (u_0 :: l)))) \/ (i > x \/ x >= (i + length (u_0 :: l)))) as Disj. lia.
+  case Disj.
+    case. move => Ineq_0 Ineq_1. rewrite lemma11; trivial.
+    compare i x.
+      move => Eq. replace (x-i) with 0. 2 : lia.
+      assert (1+i<>x) as Ineq_2. lia.
+      replace ((var x) [1 + i <-- l]) with (var x).
+      rewrite lemma9. trivial. simpl. reflexivity.
+      assert (1+i > x \/ x >= (1+i + (length l))). lia. rewrite lemma12. trivial. reflexivity.
+      move => Ineq. assert (1+i <= x) as Ineq_2. lia. assert (x < (1+i) + (length l)). simpl in Ineq_1. lia.
+      assert (List.Forall (hasAllFreeVarUnder (1+i)) l) as Hl.
+      assert (Lem1 : forall t' : lambdaTermeN, C[i](t') -> C[1+i](t')).
+      move => t'. replace (1+i) with (i+1). exact (lemma1 t' i). lia.
+      apply (List.Forall_impl (hasAllFreeVarUnder (1+i)) Lem1). trivial.
+      replace (((var x) [1 + i <-- l]) [i <- u_0]) with ((var x) [1 + i <-- l]).
+      replace ((var x) [1 + i <-- l]) with (List.nth (x - (1+i)) l (var x)). 2 : rewrite lemma11. 2 : trivial. 2 : trivial. 2 : reflexivity.
+      replace (x - i) with (S (x - (1 + i))). 2 : lia.
+      simpl. reflexivity.
+      rewrite lemma5. 2 : reflexivity. apply lemma13. trivial. trivial. trivial.
+    move => Ineq_0.
+    rewrite lemma12. trivial.
+    assert (1+i > x \/ x >= ((1+i) + (length l))) as Ineq_1.
+    case Ineq_0. move => Ineq_1. lia. move => Ineq_1. simpl in Ineq_1. lia.
+    rewrite lemma12. trivial.
+    assert (i<>x) as Ineq. simpl in Ineq_0. lia.
+    rewrite lemma10. trivial. reflexivity.
+    
+  move => i l Hl u_0. simpl.
+  suff : (t) [i + 1 <-- incr_free u_0 :: List.map incr_free l] = ((t) [S (i + 1) <-- List.map incr_free l]) [i + 1 <- incr_free u_0].
+    move => H. rewrite H. reflexivity.
+  apply IHt.  
+  apply (Forall_map lambdaTermeN lambdaTermeN incr_free (hasAllFreeVarUnder i) (hasAllFreeVarUnder (i+1))).
+  exact (lemma15 i). trivial.
+
+  move => i l Hl u_0. simpl.
+  rewrite IHt1. trivial.
+  rewrite IHt2. trivial.
+  simpl. reflexivity.
+Qed.
+  
+Proposition prop2 :
+  forall i : nat, forall l : list lambdaTermeN, 
+  (List.Forall (hasAllFreeVarUnder i) (List.tl l)) -> (forall t : lambdaTermeN,
+  t [ i <-- l ] = ( t [ (1+i) <-- (List.tl l) ] ) [ i <- List.hd (var i) l ]).
+Proof.
+  move => i l. case l.
+    simpl. move => _ t. rewrite prop0. rewrite prop0. rewrite lemma7. reflexivity.
+    move => u_0 q Hq t. clear l. simpl in Hq. simpl. rewrite lemma16. assumption. simpl. reflexivity.
+Qed.
