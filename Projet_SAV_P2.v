@@ -62,4 +62,4 @@ Proof.
     constructor 1.
     move => t u v Reds_0 Red_0.
     apply sred. apply context_red_lambda. trivial.
-Qed.
+Qed. 
