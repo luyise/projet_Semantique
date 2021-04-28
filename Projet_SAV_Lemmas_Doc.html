@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title></title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Projet_SAV_Lemmas</h1>
+
+<div class="code">
+<span class="id" title="keyword">Add</span> <span class="id" title="var">LoadPath</span> "C:\Users\Hp\Documents\Coq" <span class="id" title="keyword">as</span> <span class="id" title="var">CoqDirectory</span>.<br/>
+<span class="id" title="keyword">Load</span> <span class="id" title="var">Projet_SAV_P2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma20</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">x</span> : <span class="id" title="var">nat</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">k</span> : <span class="id" title="var">nat</span>, <span class="id" title="var">hasAllFreeVarUnder</span> <span class="id" title="var">k</span> (<span class="id" title="var">var</span> <span class="id" title="var">x</span>) → <span class="id" title="var">x</span> &lt; <span class="id" title="var">k</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma21</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">t</span> : <span class="id" title="var">lambdaTermeN</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">d</span> : <span class="id" title="var">nat</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">prop_aux_with_linkDepth</span> 0 <span class="id" title="var">d</span> <span class="id" title="var">t</span> → <span class="id" title="var">incr_free_with_linkDepth</span> <span class="id" title="var">d</span> <span class="id" title="var">t</span> = <span class="id" title="var">t</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma22</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">t</span> : <span class="id" title="var">lambdaTermeN</span>, <span class="id" title="var">isClosed</span> <span class="id" title="var">t</span> → (<span class="id" title="var">incr_free</span> <span class="id" title="var">t</span>) = <span class="id" title="var">t</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma23</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span> : <span class="id" title="var">list</span> <span class="id" title="var">lambdaTermeN</span>, <span class="id" title="var">List.Forall</span> <span class="id" title="var">isClosed</span> <span class="id" title="var">l</span> → <span class="id" title="var">List.map</span> <span class="id" title="var">incr_free</span> <span class="id" title="var">l</span> = <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma24</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> : <span class="id" title="var">lambdaTermeN</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">d</span> : <span class="id" title="var">nat</span>, <span class="id" title="var">prop_aux_with_linkDepth</span> 0 <span class="id" title="var">d</span> <span class="id" title="var">u</span> → <span class="id" title="var">prop_aux_with_linkDepth</span> 0 (<span class="id" title="var">d</span>+1) <span class="id" title="var">u</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma25</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> : <span class="id" title="var">lambdaTermeN</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">d</span> <span class="id" title="var">h</span> : <span class="id" title="var">nat</span>, <span class="id" title="var">prop_aux_with_linkDepth</span> 0 <span class="id" title="var">d</span> <span class="id" title="var">u</span> → <span class="id" title="var">prop_aux_with_linkDepth</span> 0 (<span class="id" title="var">d</span>+<span class="id" title="var">h</span>) <span class="id" title="var">u</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma26</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span> : <span class="id" title="var">list</span> <span class="id" title="var">A</span>, <span class="id" title="var">List.map</span> <span class="id" title="var">ssrfun.id</span> <span class="id" title="var">l</span> = <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma27</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> : <span class="id" title="var">lambdaTermeN</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">d</span> : <span class="id" title="var">nat</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span> : <span class="id" title="var">list</span> <span class="id" title="var">lambdaTermeN</span>,<br/>
+&nbsp;&nbsp;(<span class="id" title="var">prop_aux_with_linkDepth</span> (<span class="id" title="var">length</span> <span class="id" title="var">l</span>) <span class="id" title="var">d</span> <span class="id" title="var">u</span>) → (<span class="id" title="var">List.Forall</span> <span class="id" title="var">isClosed</span> <span class="id" title="var">l</span>) → <span class="id" title="var">prop_aux_with_linkDepth</span> 0 <span class="id" title="var">d</span> (<span class="id" title="var">u</span> [ <span class="id" title="var">d</span> &lt;-- <span class="id" title="var">l</span> ]).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">lemma28</span> : <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span> : <span class="id" title="var">list</span> <span class="id" title="var">lambdaTermeN</span>, <span class="id" title="keyword">∀</span> <span class="id" title="var">u</span> : <span class="id" title="var">lambdaTermeN</span>,<br/>
+&nbsp;&nbsp;(<span class="id" title="var">hasAllFreeVarUnder</span> (<span class="id" title="var">length</span> <span class="id" title="var">l</span>) <span class="id" title="var">u</span>) → (<span class="id" title="var">List.Forall</span> <span class="id" title="var">isClosed</span> <span class="id" title="var">l</span>) → <span class="id" title="var">isClosed</span> (<span class="id" title="var">u</span> [ 0 &lt;-- <span class="id" title="var">l</span> ]).<br/>
+</div>
+<table>
+<tr>
+<td>Global Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#global_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+</table>
+<hr/>
+<h1>Global Index</h1>
+<a id="global_P"></a><h2>P </h2>
+<a href="Projet_SAV_Lemmas.html">Projet_SAV_Lemmas</a> [library]<br/>
+<br/><br/><hr/>
+<h1>Library Index</h1>
+<a id="library_P"></a><h2>P </h2>
+<a href="Projet_SAV_Lemmas.html">Projet_SAV_Lemmas</a> <br/>
+<br/><br/><hr/><table>
+<tr>
+<td>Global Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#global_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+<tr>
+<td>Library Index</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+<td>K</td>
+<td>L</td>
+<td>M</td>
+<td>N</td>
+<td>O</td>
+<td><a href="index.html#library_P">P</a></td>
+<td>Q</td>
+<td>R</td>
+<td>S</td>
+<td>T</td>
+<td>U</td>
+<td>V</td>
+<td>W</td>
+<td>X</td>
+<td>Y</td>
+<td>Z</td>
+<td>_</td>
+<td>other</td>
+<td>(1 entry)</td>
+</tr>
+</table>
+<hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
