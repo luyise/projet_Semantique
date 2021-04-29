@@ -1,6 +1,6 @@
 Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
 Add LoadPath "/Users/samuel/Documents/Documents-L3/PolyCours/S2/Sem/projet_Semantique" as CoqDirectory.
-Load Projet_SAV_P3.
+Load Projet_SAV_P3bis.
 
 Definition code_correctness: codeBloc -> stack -> Prop := 
   fun c e => C[ size e]( tau_code c).
@@ -13,20 +13,19 @@ Fixpoint stack_correctness (s: stack): Prop :=
 end.*)
 
 Inductive stack_correctness : stack -> Prop :=
-    | empty_is_correct : stack_correctness empty
+    | empty_is_correct : stack_correctness empty_stack
     | top_is_correct : forall c_0 : codeBloc, forall e_0 tl : stack,
         (code_correctness c_0 e_0) -> (stack_correctness e_0) -> (stack_correctness tl)
-        -> stack_correctness (element (c_0, e_0) tl).
+        -> stack_correctness ((c_0, e_0) # tl).
 
 Theorem stack_correctness_is_no_free: forall e: stack,
     stack_correctness e ->  List.Forall (fun t => C[ 0 ]( t )) (tau_stack e).
 Proof.
-    intro e. intro H. 
+    intro e; intro H. 
     induction H.
-    simpl.
+    all: simpl.
     auto.
     
-    simpl.
     apply List.Forall_cons.
     2: trivial.
 
@@ -34,11 +33,8 @@ Proof.
 
     rewrite <- tau_stack_length in H.
 
-    pose u := tau_code c_0; fold u; fold u in H.
-    pose l := tau_stack e_0; fold l; fold l in IHstack_correctness1; fold l in H.
     apply lemma28.
-    trivial.
-    trivial.
+    all: trivial.
 Qed.
 
 
@@ -61,49 +57,50 @@ Qed.
 Lemma tuple_eq_is_eq: forall (A B : Type) (a1 a2 : A) (b1 b2 : B),
       (a1, b1) = (a2, b2) <-> a1 = a2 /\ b1 = b2.
 Proof.
-  move => A B.
-  split; move => H . split.
-  replace a1 with (fst (a1, b1)); replace a2 with (fst (a2, b2)); trivial.
-  rewrite H.
-  trivial.
-  replace b1 with (snd (a1, b1)); replace b2 with (snd (a2, b2)); trivial.
-  rewrite H; trivial.
+  intros.
+  split; intro H . split.
+  1 : replace a1 with (fst (a1, b1)); replace a2 with (fst (a2, b2)); trivial.
+  2 : replace b1 with (snd (a1, b1)); replace b2 with (snd (a2, b2)); trivial.
+  1-2: rewrite H.
+  1-2: trivial.
   destruct H.
-  rewrite H. rewrite H0.
+  rewrite H H0.
   trivial.
 Qed.
 
 Lemma triple_eq_is_eq: forall (A B C: Type) (a1 a2 : A) (b1 b2 : B) (c1 c2 : C),
   (a1, b1, c1) = (a2, b2, c2) <-> a1 = a2 /\ b1 = b2 /\ c1 = c2.
-  move => A B C.
+  intros.
   split.
-  move => H.
-  split.
-  replace a1 with (fst (fst ((a1, b1), c1))); replace a2 with (fst (fst ((a2, b2), c2))); trivial.
-  rewrite H; trivial.
-  split.
-  replace b1 with (snd (fst ((a1, b1), c1))); replace b2 with (snd (fst ((a2, b2), c2))); trivial.
-  rewrite H; trivial.
-  replace c1 with (snd ((a1, b1), c1)); replace c2 with (snd ((a2, b2), c2)); trivial.
-  rewrite H; trivial.
-  move => H. destruct H; destruct H0.
-  rewrite H; rewrite H0; rewrite H1.
+  intro H.
+  repeat split.
+  1 : replace a1 with (fst (fst ((a1, b1), c1))); replace a2 with (fst (fst ((a2, b2), c2))); trivial.
+  2 : replace b1 with (snd (fst ((a1, b1), c1))); replace b2 with (snd (fst ((a2, b2), c2))); trivial.
+  3 : replace c1 with (snd ((a1, b1), c1)); replace c2 with (snd ((a2, b2), c2)); trivial.
+  1-3: rewrite H; trivial.
+  intro H. destruct H; destruct H0.
+  rewrite H H0 H1.
   trivial.
 Qed.
 
 Lemma some_triple_to_eq: forall (A B C: Type) (a1 a2: A) (b1 b2: B) (c1 c2: C),
   Some (a1, b1, c1) = Some (a2, b2, c2) <-> a1 = a2 /\ b1 = b2 /\ c1 = c2.
 Proof.
-  move => A B C a1 a2 b1 b2 c1 c2.
+  intros.
   split.
-  move => H.
-  apply triple_eq_is_eq; apply option_equality_lemma; trivial.
-  move => H.
-  apply option_equality_lemma; apply triple_eq_is_eq; trivial.
+  all: intro H.
+  + apply triple_eq_is_eq.
+    apply option_equality_lemma.
+    trivial.
+
+  + apply option_equality_lemma.
+    apply triple_eq_is_eq.
+    trivial.
 Qed.
 
-Lemma correctness_propagation: forall (c1 c2: codeBloc), forall (e1 e2 s1 s2: stack),
-  code_correctness c1 e1 /\ stack_correctness e1 /\ stack_correctness s1 /\ Some (c1, e1, s1) = Some (c2, e2, s2) -> code_correctness c2 e2 /\ stack_correctness e2 /\ stack_correctness s2.
+Lemma correctness_propagation:
+  forall (c1 c2: codeBloc), forall (e1 e2 s1 s2: stack),
+    code_correctness c1 e1 /\ stack_correctness e1 /\ stack_correctness s1 /\ Some (c1, e1, s1) = Some (c2, e2, s2) -> code_correctness c2 e2 /\ stack_correctness e2 /\ stack_correctness s2.
 Proof.
   move => c1 c2 e1 e2 s1 s2 H.
   destruct H; destruct H0; destruct H1.
@@ -115,110 +112,127 @@ Proof.
   trivial.
 Qed.
 
-Lemma stack_correctness_propagation: forall c: codeBloc, forall (e s : stack), stack_correctness s /\ stack_correctness e /\ code_correctness c e -> stack_correctness (element (c, e) s).
+Lemma stack_correctness_propagation:
+  forall c: codeBloc, forall (e s : stack),
+    stack_correctness s /\ stack_correctness e /\ code_correctness c e -> stack_correctness ((c, e) # s).
 Proof.
   move => c e s H.
   destruct H; destruct H0.
-  simpl.
-  apply top_is_correct; trivial.
+  apply top_is_correct.
+  all : trivial.
 Qed.
 
-Lemma code_correctness_propagation_access: forall n: nat, forall s: stack, forall p: codeBloc * stack, code_correctness (access (S n)) (element p s) -> code_correctness (access n) s.
+Lemma code_correctness_propagation_access:
+  forall n: nat, forall s: stack, forall p: codeBloc * stack,
+    code_correctness (Access (S n)) (p # s) -> code_correctness (Access n) s.
 Proof.
-  move => n s p.
+  intro n; intro s; intro p.
   unfold code_correctness; simpl.
   unfold hasAllFreeVarUnder; simpl.
   lia.
 Qed.
 
-Lemma code_correctness_propagation_grab: forall (c c0: codeBloc), forall (e s: stack), code_correctness (grab c) s -> code_correctness c (element (c0, e) s).
+Lemma code_correctness_propagation_grab:
+  forall (c c0: codeBloc), forall (e s: stack),
+    code_correctness (grab c) s -> code_correctness c ((c0, e) # s).
 Proof.
   move => c c0 e s.
   unfold code_correctness; simpl.
-  move => H.
+  intro H.
   replace (S (size s)) with (size s + 1).
-  apply (lemma4 (tau_code c) (size s)).
-  trivial.
-  lia.
-Qed.
-
-Lemma code_correctness_propagation_push1: forall (c1 c2: codeBloc), forall (e: stack), code_correctness (push c1 c2) e -> code_correctness c1 e.
-Proof.
-  move => c1 c2 e.
-  unfold code_correctness.
-  unfold hasAllFreeVarUnder.
-  simpl.
-  move => [H1 H2].
+  2: lia.
+  apply lemma4.
   trivial.
 Qed.
 
-Lemma code_correctness_propagation_push2: forall (c1 c2: codeBloc), forall (e: stack), code_correctness (push c1 c2) e -> code_correctness c2 e.
+Lemma code_correctness_propagation_push1:
+  forall (c1 c2: codeBloc), forall (e: stack),
+    code_correctness (push c1 c2) e -> code_correctness c1 e.
 Proof.
-  move => c1 c2 e.
   unfold code_correctness.
   unfold hasAllFreeVarUnder.
   simpl.
-  move => [H1 H2].
-  trivial.
+  intro c1; intro c2; intro e; intro H.
+  elim H.
+  auto.
+Qed.
+
+Lemma code_correctness_propagation_push2:
+  forall (c1 c2: codeBloc), forall (e: stack),
+    code_correctness (push c1 c2) e -> code_correctness c2 e.
+Proof.
+  unfold code_correctness.
+  unfold hasAllFreeVarUnder.
+  simpl.
+  intro c1; intro c2; intro e; intro H.
+  elim H.
+  auto.
 Qed.
 
 Lemma correctness_preserved: forall ks: krivineState, forall nks: krivineState, state_correctness ks -> (transitionFunction ks = Some nks) -> state_correctness nks.
 Proof.
   unfold krivineState.
-  move => ks nks.
-  case ks.
-  move => p_0 s_0.
-  case p_0.
-  move => c_0 e_0.
-  case nks; move => p_1 s_1; case p_1; move => c_1 e_1.
-  case c_0; simpl.
-  case e_0; simpl.
-  move => n _.
-  case n; discriminate.
-  move => p_2 s n.
-  case n; simpl.
-  case p_2.
-  move => c s0 H1 Eq.
-  destruct H1 as [H0 [H1 H2]].
-  inversion H1.
-  apply (correctness_propagation c c_1 s0 e_1 s_0 s_1).
-  auto.
+  intro ks; intro nks.
+  case ks; clear ks.
+  intro p; intro s.
+  case p; clear p.
+  intro c; intro e.
+  case nks; clear nks; intro p; intro s_1; case p; intro c0; intro e0.
+  case c; clear c.
+  + intro n.
+    simpl.
+    case e; clear e.
+    case n; discriminate.
+    intro p0; intro s0.
+    case n; clear n; simpl.
+    case p0; clear p0.
+    intro c; intro s1.
+    move => H1 Eq.
+    destruct H1 as [H0 [H1 H2]].
+    inversion H1.
+    apply (correctness_propagation c c0 s1 e0 s s_1).
+    auto.
+    
+    case p0; clear p0.
+    move => c s1 n H Eq.
+    destruct H; destruct H0.
+    apply (correctness_propagation (Access n) c0 s0 e0 s s_1).
+    split.
+    pose H4 := code_correctness_propagation_access n s0 (c, s1) H.
+    trivial.
+    inversion H0.
+    auto.
+
+  + intro c.
+    case s; clear s.
+    simpl. 
+    discriminate.
+
+    move => p0 s.
+    case p0; clear p0.
+    move => c1 s0.
+    simpl.
+    move => [H [H0 H1]] Eq.
+    apply (correctness_propagation c c0 ((c1, s0) # e) e0 s s_1).
+    split.
+
+    apply code_correctness_propagation_grab; trivial.
+    inversion H1.
+    split; auto.
+    apply top_is_correct; trivial.
+
+  + simpl.
+    move => c c1 [H [H0 H1]] Eq.
+    apply (correctness_propagation c1 c0 e e0 ((c, e) # s) s_1).
+    split.
+    apply (code_correctness_propagation_push2 c c1 e); trivial.
+    repeat split.
+    all : trivial.
   
-  case p_2.
-  move => c s0 n0 H Eq.
-  destruct H; destruct H0.
-  apply (correctness_propagation (access n0) c_1 s e_1 s_0 s_1).
-  split.
-  pose H4 := code_correctness_propagation_access n0 s (c, s0) H.
-  trivial.
-  inversion H0.
-  auto.
-
-  case s_0.
-  discriminate.
-
-  move => p s c.
-  case p.
-  move => c0 s0.
-  simpl.
-  move => [H [H0 H1]] Eq.
-  apply (correctness_propagation c c_1 (element (c0, s0) e_0) e_1 s s_1).
-  split.
-
-  apply code_correctness_propagation_grab; trivial.
-  inversion H1.
-  split; auto.
-  apply top_is_correct; trivial.
-
-  move => c c0 [H [H0 H1]] Eq.
-  apply (correctness_propagation c0 c_1 e_0 e_1 (element (c, e_0) s_0) s_1).
-  split.
-  apply (code_correctness_propagation_push2 c c0 e_0); trivial.
-  split; trivial.
-  split; trivial.
-  apply stack_correctness_propagation.
-  pose H2 := code_correctness_propagation_push1 c c0 e_0 H.
-  auto.
+    apply stack_correctness_propagation.
+    repeat split.
+    all : trivial.
+    apply (code_correctness_propagation_push1 c c1 e H).
 Qed.
 
 (*
@@ -347,7 +361,7 @@ Proof.
   unfold hasAllFreeVarUnder.
   simpl.
   move => Eq [Correct1 [Correct2 Correct3]].
-  suff: access n0 = c0 /\ s3 = s2 /\ s0 = s.
+  suff: Access n0 = c0 /\ s3 = s2 /\ s0 = s.
   2: apply some_triple_to_eq; trivial.
   move => H.
   destruct H; destruct H0.
@@ -356,7 +370,7 @@ Proof.
   simpl.
   unfold tau_tuple.
   unfold tau_code.
-  rewrite (lemma11 (S n0) 0 (tau_stack (element (c1, s4) s3))).
+  rewrite (lemma11 (S n0) 0 (tau_stack ((c1, s4) # s3))).
   lia.
   rewrite tau_stack_length.
   simpl.
@@ -419,7 +433,7 @@ Proof.
   move => SomeEq H.
   destruct H; destruct H0.
 
-  suff : c = c0 /\ element (c1, s3) s1 = s2 /\ s0  = s.
+  suff : c = c0 /\ (c1, s3) # s1 = s2 /\ s0  = s.
   2: apply some_triple_to_eq; auto.
   move => [Eq1 [Eq2 Eq3]].
   rewrite <- Eq1; rewrite <- Eq2; rewrite <- Eq3.
@@ -438,7 +452,7 @@ Proof.
   trivial.
 
   move => c c1 Eq.
-  suff : c1 = c0 /\ s1 = s2 /\ element (c, s1) s0 = s.
+  suff : c1 = c0 /\ s1 = s2 /\ (c, s1) # s0 = s.
   2: apply some_triple_to_eq; auto.
   move => [Eq1 [Eq2 Eq3]] [H [H0 H1]].
   rewrite <- Eq1 in *; clear Eq1; clear c0.
@@ -472,7 +486,7 @@ Lemma lambdaTerme_code_correctness : forall u : lambdaTermeN, isClosed u <-> sta
     intro c; intro s0.
     unfold comp_glob.
     intro H.
-    suff: (comp u = c) /\ empty = s0 /\ empty = s.
+    suff: (comp u = c) /\ empty_stack = s0 /\ empty_stack = s.
     move => [Eq1 [Eq2 Eq3]]. clear H.
     rewrite <- Eq2; clear Eq2; clear s0.
     rewrite <- Eq3; clear Eq3; clear s.
