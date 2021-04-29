@@ -1,5 +1,7 @@
 Add LoadPath "C:\Users\Hp\Documents\Coq" as CoqDirectory.
 Load Projet_SAV_P2.
+Load Projet_SAV_utils.
+
 
 Lemma lemma20 : forall x : nat, forall k : nat, hasAllFreeVarUnder k (var x) -> x < k.
 Proof.
