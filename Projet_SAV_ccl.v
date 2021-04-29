@@ -40,9 +40,9 @@ Proof.
         all : trivial.
 Qed.
 
-Theorem compilation_correctness :
+Theorem compilation_correctness_stategy :
     forall t : lambdaTermeN, forall ks : krivineState,
-        isClosed t -> ((comp_glob t) km->* ks) ->  (t s->* (tau ks)) .
+        isClosed t -> ((comp_glob t) km->* ks) -> (t s->* (tau ks)).
 Proof.
     move => t ks_1 iC H.
     pose ks_0 := comp_glob t.
@@ -60,10 +60,12 @@ Proof.
     split; apply empty_is_correct.
 Qed.
 
-
-
-
-
-
-    
-    
+Theorem compilation_correctness :
+    forall t : lambdaTermeN, forall ks : krivineState,
+        isClosed t -> ((comp_glob t) km->* ks) -> (t beta->* (tau ks)).
+Proof.
+    intro t; intro ks; intro H; intro H0.
+    apply kv_red_included_in_beta_red.
+    apply compilation_correctness_stategy.
+    all : trivial.
+Qed.
