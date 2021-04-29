@@ -64,3 +64,18 @@ Proof.
     move => t u v Reds_0 Red_0.
     apply sred. apply context_red_lambda. trivial.
 Qed.
+
+(** On définit ici une relation plus fine que la beta_reduction,
+  qui correspond au pendant du fonctionnement de la machine de krivine sur des lambdas termes
+  ceci servira à prouver un théorème de correction de la compilation en partie 5 *)
+
+Reserved Notation " A s-> B " (at level 0).
+
+Inductive krivine_sred : lambdaTermeN -> lambdaTermeN -> Prop :=
+  | Kevaluation : forall t u : lambdaTermeN, ((app (lambda t) u) s-> (t [0 <- u]))
+  | Kcontext_red_l : forall t u v : lambdaTermeN, (t s-> u) -> ((app t v) s-> (app u v))
+where " t_0 s-> t_1 " := (krivine_sred t_0 t_1).
+
+
+
+(* Lemma kv_red_is_functionnal :  *)

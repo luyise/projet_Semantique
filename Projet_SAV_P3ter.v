@@ -62,13 +62,48 @@ Locate Some.
 Lemma transitionRelation_is_transitionFunction :
   forall ks_0 ks_1 : krivineState, transitionFunction ks_0 = Some ks_1 <-> ( ks_0 km-> ks_1 ).
 Proof.
-  split.
-  all : case ks_0 as [p_0 s_0], ks_1 as [p_1 s_1], p_0 as [c_0 e_0], p_1 as [c_1 e_1].
-  case c_0.
-    + move => n. case n. case e_0.
-      - simpl. discriminate.
-      - simpl. move => p. case p as [c_2 e_2]. move => s.
-        move => Eq. 
+  case ks_0 as [p_0 s_0], ks_1 as [p_1 s_1], p_0 as [c_0 e_0], p_1 as [c_1 e_1]. split.
+    * case c_0.
+      + move => n. case n. case e_0.
+        - simpl. discriminate.
+        - simpl. move => p. case p as [c_2 e_2]. move => s.
+          move => Eq.
+          assert (c_2 = c_1 /\ e_2 = e_1 /\ s_0 = s_1) as [Eq1 [Eq2 Eq3]].
+          apply some_triple_to_eq. assumption.
+          rewrite Eq1 Eq2 Eq3. apply TAccess_O.
+        - move => n'. case e_0. simpl. discriminate.
+          move => p s. case p as [c_2 e_2]. simpl. move => Eq.
+          assert (Access n' = c_1 /\ s = e_1 /\ s_0 = s_1) as [Eq1 [Eq2 Eq3]].
+          apply some_triple_to_eq. trivial.
+          rewrite <-Eq1, <-Eq2, <-Eq3.
+          apply TAccess_S.
+      + move => c_2. case s_0.
+        - move => Eq. simpl in Eq. discriminate.
+        - case p as [c_3 e_3] => s_2. simpl => Eq.
+          assert (c_2 = c_1 /\ (c_3, e_3) # e_0 = e_1 /\ s_2 = s_1) as [Eq1 [Eq2 Eq3]].
+          apply some_triple_to_eq. trivial.
+          rewrite <-Eq1, <-Eq2, <-Eq3.
+          apply TGrab.
+      + move => c_2 c_3. simpl => Eq.
+        assert (c_3 = c_1 /\ e_0 = e_1 /\ (c_2, e_0) # s_0 = s_1) as [Eq1 [Eq2 Eq3]].
+        apply some_triple_to_eq. trivial.
+        rewrite <-Eq1, <-Eq2, <-Eq3.
+        apply TPush.
+
+    * case c_0.
+      + move => n. case n.
+        - case e_0. simpl. move => KmTrans. inversion KmTrans.
+          move => p s_3. case p as [c_2 s_2]. simpl. move => KmTrans.
+          inversion KmTrans. reflexivity.
+        - move => n' KmTrans. inversion KmTrans. simpl. reflexivity.
+      + move => c_2. case s_0.
+        - simpl. move => KmTrans. inversion KmTrans.
+        - move => p s. case p as [c_3 e_3]. simpl.
+          move => KmTrans. inversion KmTrans.
+          reflexivity.
+      + move => c_2 c_3. simpl.
+        move => KmTrans. inversion KmTrans. reflexivity.
+Qed.
 
 Fixpoint comp (t: lambdaTermeN) : codeBloc :=
   match t: lambdaTermeN return codeBloc with
