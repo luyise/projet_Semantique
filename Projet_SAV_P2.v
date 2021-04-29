@@ -1,4 +1,4 @@
-Add LoadPath "C:\Users\Hp\Documents\Coq" as CoqDirectory.
+Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
 Load Projet_SAV_P1.
 
 (* - 1 - *)

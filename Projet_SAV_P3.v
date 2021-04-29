@@ -1,4 +1,4 @@
-Add LoadPath "C:\Users\Hp\Documents\Coq" as CoqDirectory.
+Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
 Add LoadPath "/Users/samuel/Documents/Documents-L3/PolyCours/S2/Sem/projet_Semantique" as CoqDirectory.
 Load Projet_SAV_P2.
 
@@ -15,13 +15,11 @@ Inductive stack :=
     | empty : stack
     | element : (codeBloc * stack) -> stack -> stack.
 
-
 Fixpoint size (e: stack) : nat :=
   match e return nat with
     | empty => 0
     | element _ tl => S (size tl)
 end.
-    
 
 (* Définition de l'état de la machine de Krivine*)
 Definition krivineState: Type := (codeBloc * stack * stack).
