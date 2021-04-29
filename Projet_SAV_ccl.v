@@ -50,14 +50,8 @@ Proof.
     apply krivine_trans_is_stategy.
     2: trivial.
 
-    unfold state_correctness.
-    unfold comp_glob.
-    unfold code_correctness.
-    simpl.
-    rewrite <- comp_is_comp_glob.
-    rewrite comp_and_tau.
-    split; trivial.
-    split; apply empty_is_correct.
+    apply lambdaTerme_code_correctness.
+    trivial.
 Qed.
 
 Theorem compilation_correctness :

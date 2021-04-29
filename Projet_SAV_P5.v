@@ -180,10 +180,6 @@ Proof.
     apply (code_correctness_propagation_push1 c c1 e H).
 Qed.
 
-(*
-Lemma tau_inner_processing_access_0 : forall c0: codeBloc, forall s s2 s3 : stack,
-  (tau_inner (access 0) (element (c0, s2) s3) s) = tau_inner c0 s2 s.
-*)
 
 Lemma tau_inner_krivine_sred: forall s : stack, forall u v : lambdaTermeN, krivine_sred u v -> krivine_sred (tau_inner s u) (tau_inner s v).
 Proof.
@@ -197,63 +193,6 @@ Proof.
     apply Kcontext_red_l.
     trivial.
 Qed.
-
-
-(*
-Lemma app_red: forall v u t : lambdaTermeN, (beta_sred (app u v) (app t v)) ->  (beta_sred u t) \/ (beta_sred v v /\ u = t).
-Proof.
-    intro v.
-    induction v; intro u; intro t; intro H.
-Admitted.
-
-
-
-
-Lemma beta_red_tau_inner: forall s : stack, forall u v : lambdaTermeN, beta_sred (tau_inner s u) (tau_inner s v) -> beta_sred u v.
-Proof.
-    intro s.
-    induction s.
-    simpl.
-    trivial.
-
-    simpl.
-    case p; clear p.
-    intro c; intro s0; intro u; intro v.
-    pose t := tau_tuple c s0; fold t; fold t.
-    induction t.
-    intro H.
-    pose H0 := IHs (app u (var n)) (app v (var n)) H.
-    inversion H0.
-    simpl.
-    induction t.
-    simpl in H0.
-    inversion H0.
-    rewrite <- H2 in H0; rewrite <- H2 in H.
-    clear H2; clear u.
-    rewrite <- H3 in *; clear H3; clear s0; clear c.
-    rewrite <- H4 in H0.
-
-    Focus 2.
-    trivial.
-    Focus 2.
-    rewrite <- H3 in *; clear H3; clear c; clear s0.
-    clear H5; clear u0.
-    rewrite <- H4 in *; clear H4; clear v.
-    rewrite <- H1 in *; clear H1; clear u.
-    case H0.
-    
-    pose H5 := evaluation t u0.
-    rewrite H4 in H5.
-    rewrite evaluation in H4.
-    case_eq H0.
-    apply (context_red_l u v (tau_tuple c s0)) in H0.
-    elim H0; trivial.
-    destruct H0.
-    inversion H0.
-    suff: beta_red (app (lambda t) (tau_tuple c s0) ) 
-    trivial.
-Qed.
-*)
 
 Require Import Arith.
 Theorem trans_is_krivine_reduce: forall ks1 ks2 : krivineState, transitionFunction ks1 = Some ks2 -> state_correctness ks1 -> krivine_sred (tau ks1) (tau ks2) \/ tau ks1 = tau ks2.
