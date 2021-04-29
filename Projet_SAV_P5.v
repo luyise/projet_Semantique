@@ -1,6 +1,6 @@
 Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
 Add LoadPath "/Users/samuel/Documents/Documents-L3/PolyCours/S2/Sem/projet_Semantique" as CoqDirectory.
-Load Projet_SAV_P3bis.
+Load Projet_SAV_P3ter.
 
 Definition code_correctness: codeBloc -> stack -> Prop := 
   fun c e => C[ size e]( tau_code c).
@@ -185,7 +185,7 @@ Lemma tau_inner_processing_access_0 : forall c0: codeBloc, forall s s2 s3 : stac
   (tau_inner (access 0) (element (c0, s2) s3) s) = tau_inner c0 s2 s.
 *)
 
-Lemma tau_inner_beta_red: forall s : stack, forall u v : lambdaTermeN, beta_sred u v -> beta_sred (tau_inner s u) (tau_inner s v).
+Lemma tau_inner_krivine_sred: forall s : stack, forall u v : lambdaTermeN, krivine_sred u v -> krivine_sred (tau_inner s u) (tau_inner s v).
 Proof.
     induction s.
     simpl.
@@ -194,7 +194,7 @@ Proof.
     case p.
     intro c; intro s0; intro u; intro v; intro H.
     apply IHs.
-    apply context_red_l.
+    apply Kcontext_red_l.
     trivial.
 Qed.
 
@@ -256,7 +256,7 @@ Qed.
 *)
 
 Require Import Arith.
-Theorem trans_is_beta_reduce: forall ks1 ks2 : krivineState, transitionFunction ks1 = Some ks2 -> state_correctness ks1 -> beta_sred (tau ks1) (tau ks2) \/ tau ks1 = tau ks2.
+Theorem trans_is_krivine_reduce: forall ks1 ks2 : krivineState, transitionFunction ks1 = Some ks2 -> state_correctness ks1 -> krivine_sred (tau ks1) (tau ks2) \/ tau ks1 = tau ks2.
 Proof.
   move => ks1 ks2.
   case ks1; clear ks1.
@@ -390,8 +390,8 @@ Proof.
 
   left.
 
-  apply tau_inner_beta_red.
-  apply grab_beta_red.
+  apply tau_inner_krivine_sred.
+  apply grab_krivine_sred.
 
   apply stack_correctness_is_no_free.
   trivial.

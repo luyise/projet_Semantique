@@ -53,7 +53,8 @@ Reserved Notation " A km->* B " (at level 1).
 
 Inductive transitionRelationExt : krivineState -> krivineState -> Prop :=
   | refl_km : forall ks : krivineState, ks km->* ks
-  | single_km : forall ks_0 ks_1 ks_2 : krivineState, (ks_0 km-> ks_1) -> (ks_1 km->* ks_2) -> (ks_0 km->* ks_2)
+  | single_km : forall ks_0 ks_1 : krivineState, (ks_0 km-> ks_1) -> (ks_0 km->* ks_1)
+  | concat_km : forall ks_0 ks_1 ks_2 : krivineState, (ks_0 km->* ks_1) -> (ks_1 km->* ks_2) -> (ks_0 km->* ks_2)
 where
 " ks_0 km->* ks_1 " := (transitionRelationExt ks_0 ks_1).
 
@@ -193,8 +194,8 @@ Proof.
   trivial.
 Qed.
 
-Lemma grab_beta_red : forall c c1 : codeBloc, forall s s1 : stack,
-  List.Forall (fun t => C[0](t)) (tau_stack s) -> (app (tau_tuple (grab c) s) (tau_tuple c1 s1)) beta-> (tau_tuple c ((c1, s1) # s)).
+Lemma grab_krivine_sred : forall c c1 : codeBloc, forall s s1 : stack,
+  List.Forall (fun t => C[0](t)) (tau_stack s) -> (app (tau_tuple (grab c) s) (tau_tuple c1 s1)) s-> (tau_tuple c ((c1, s1) # s)).
 Proof.
   move => c c1 s s1 Hl.
   unfold tau_tuple.
@@ -205,7 +206,7 @@ Proof.
     suff : ((tau_code c) [0 <-- (tau_code c1) [0 <-- tau_stack s1] :: tau_stack s])
         = (tau_code c) [1 <-- tau_stack s] [0 <- (tau_code c1) [0 <-- tau_stack s1]].
       intro H0; rewrite H0.
-    apply (evaluation (tau_code c) [1 <-- tau_stack s] (tau_code c1) [0 <-- tau_stack s1]).
+    apply (Kevaluation (tau_code c) [1 <-- tau_stack s] (tau_code c1) [0 <-- tau_stack s1]).
 
     apply prop2.
     simpl.
