@@ -1,4 +1,4 @@
-Add LoadPath "C:\Users\Hp\Documents\Coq" as CoqDirectory.
+Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
 Add LoadPath "/Users/samuel/Documents/Documents-L3/PolyCours/S2/Sem/projet_Semantique" as CoqDirectory.
 Load Projet_SAV_Lemmas.
 
@@ -35,9 +35,40 @@ Definition transitionFunction : krivineState -> option krivineState :=
     | (Access 0, (c_0, e_0) # _, s) => Some (c_0, e_0, s)
     | (Access (S n), _ # tl, s)     => Some (Access n, tl, s)
     | (Push c_2; c, e, s)           => Some (c, e, (c_2, e) # s)
-    | (Grab; c, e, t # s)           =>  Some (c, t # e, s)
+    | (Grab; c, e, t # s)           => Some (c, t # e, s)
     | _ => None
 end.
+
+Reserved Notation " A km-> B " (at level 0).
+
+Inductive transitionRelation : krivineState -> krivineState -> Prop :=
+  | TAccess_O : forall c : codeBloc, forall e s_0 s_1 : stack, (Access 0, (c, e) # s_0, s_1) km-> (c, e, s_1)
+  | TAccess_S : forall n : nat, forall p : (codeBloc * stack), forall s_0 s_1 : stack, (Access (S n), p # s_0, s_1) km-> (Access n, s_0, s_1)
+  | TPush : forall c_0 c_1 : codeBloc, forall e s : stack, (Push c_0; c_1, e, s) km-> (c_1, e, (c_0, e) # s)
+  | TGrab : forall c : codeBloc, forall e s : stack, forall p : (codeBloc * stack), (Grab; c, e, p # s) km-> (c, p # e, s)
+where
+" ks_0 km-> ks_1 " := (transitionRelation ks_0 ks_1).
+
+Reserved Notation " A km->* B " (at level 1).
+
+Inductive transitionRelationExt : krivineState -> krivineState -> Prop :=
+  | refl_km : forall ks : krivineState, ks km->* ks
+  | single_km : forall ks_0 ks_1 ks_2 : krivineState, (ks_0 km-> ks_1) -> (ks_1 km->* ks_2) -> (ks_0 km->* ks_2)
+where
+" ks_0 km->* ks_1 " := (transitionRelationExt ks_0 ks_1).
+
+Locate Some.
+
+Lemma transitionRelation_is_transitionFunction :
+  forall ks_0 ks_1 : krivineState, transitionFunction ks_0 = Some ks_1 <-> ( ks_0 km-> ks_1 ).
+Proof.
+  split.
+  all : case ks_0 as [p_0 s_0], ks_1 as [p_1 s_1], p_0 as [c_0 e_0], p_1 as [c_1 e_1].
+  case c_0.
+    + move => n. case n. case e_0.
+      - simpl. discriminate.
+      - simpl. move => p. case p as [c_2 e_2]. move => s.
+        move => Eq. 
 
 Fixpoint comp (t: lambdaTermeN) : codeBloc :=
   match t: lambdaTermeN return codeBloc with
