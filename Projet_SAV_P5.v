@@ -467,3 +467,23 @@ Lemma lambdaTerme_code_correctness : forall u : lambdaTermeN, isClosed u <-> sta
     split; apply empty_is_correct.
 
     unfold state_correctness.
+    case_eq (comp_glob u).
+    intro p; intro s; case p.
+    intro c; intro s0.
+    unfold comp_glob.
+    intro H.
+    suff: (comp u = c) /\ empty = s0 /\ empty = s.
+    move => [Eq1 [Eq2 Eq3]]. clear H.
+    rewrite <- Eq2; clear Eq2; clear s0.
+    rewrite <- Eq3; clear Eq3; clear s.
+    rewrite <- Eq1 in *; clear Eq1; clear c.
+    move => [H0 [H1 H2]].
+    unfold code_correctness in H0.
+    simpl in H0.
+    unfold isClosed.
+    rewrite <- (comp_is_comp_glob u) in H0.
+    rewrite (comp_and_tau u) in H0.
+    trivial.
+    apply triple_eq_is_eq.
+    trivial.
+Qed.
