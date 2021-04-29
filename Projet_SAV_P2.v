@@ -4,21 +4,24 @@ Load Projet_SAV_P1.
 
 (* - 1 - *)
 
-Inductive beta_sred : lambdaTermeN -> lambdaTermeN -> Prop :=
-  | evaluation : forall t u : lambdaTermeN, (beta_sred (app (lambda t) u) (t [0 <- u]))
-  | context_red_l : forall t u v : lambdaTermeN, (beta_sred t u) -> (beta_sred (app t v) (app u v))
-  | context_red_r : forall t u v : lambdaTermeN, (beta_sred t u) -> (beta_sred (app v t) (app v u))
-  | context_red_lambda : forall t u : lambdaTermeN, (beta_sred t u) -> (beta_sred (lambda t) (lambda u)).
+Reserved Notation  " t beta-> u " (at level 0).
 
-Notation  " t beta-> u " := (beta_sred t u) (at level 0).
+Inductive beta_sred : lambdaTermeN -> lambdaTermeN -> Prop :=
+  | evaluation : forall t u : lambdaTermeN, ((app (lambda t) u) beta-> (t [0 <- u]))
+  | context_red_l : forall t u v : lambdaTermeN, (t beta-> u) -> ((app t v) beta-> (app u v))
+  | context_red_r : forall t u v : lambdaTermeN, (t beta-> u) -> ((app v t) beta-> (app v u))
+  | context_red_lambda : forall t u : lambdaTermeN, (t beta-> u) -> ((lambda t) beta-> (lambda u))
+where " t beta-> u " := (beta_sred t u).
 
 (* - 2 - *)
 
-Inductive beta_red : lambdaTermeN -> lambdaTermeN -> Prop :=
-  | refl : forall t : lambdaTermeN, beta_red t t
-  | sred : forall t u v : lambdaTermeN, beta_sred t u -> beta_red u v -> beta_red t v.
+Reserved Notation " t beta->* u " (at level 0). 
 
-Notation " t beta->* u " := (beta_red t u) (at level 0).  
+Inductive beta_red : lambdaTermeN -> lambdaTermeN -> Prop :=
+  | Brefl : forall t : lambdaTermeN, ( t beta->* t )
+  | Bsingle : forall t u : lambdaTermeN, ( t beta-> u ) -> ( t beta->* u )
+  | Bconcat : forall t u v : lambdaTermeN, ( t beta->* u ) -> ( u beta->* v ) -> ( t beta->* v )
+where " t beta->* u " := (beta_red t u).  
 
 (* - 3 - *)
 
@@ -28,9 +31,11 @@ Proof.
   move => w.
   apply beta_red_ind.
     constructor 1.
-    move => t u v Reds_0 Red_0.
-    apply sred. apply context_red_l. trivial.
-Qed. 
+    move => t u Reds_0.
+    apply Bsingle. apply context_red_l. trivial.
+    move => t u v BRed_0 BRed_1 BRed_2 Bred_3.
+    apply (Bconcat (app t w) (app u w) (app v w)); trivial.
+Qed.
 
 Proposition beta_red_context_red_l :
   forall t u v : lambdaTermeN, (t beta->* u) -> ((app t v) beta->* (app u v)).
@@ -45,8 +50,10 @@ Proof.
   move => w.
   apply beta_red_ind.
     constructor 1.
-    move => t u v Reds_0 Red_0.
-    apply sred. apply context_red_r. trivial.
+    move => t u Red_0.
+    apply Bsingle. apply context_red_r. trivial.
+    move => t u v _ BRed_0 _ BRed_1.
+    apply (Bconcat (app w t) (app w u) (app w v)); trivial.
 Qed. 
 
 Proposition beta_red_context_red_r :
@@ -61,8 +68,10 @@ Proposition beta_red_context_red_lambda :
 Proof.
   apply beta_red_ind.
     constructor 1.
-    move => t u v Reds_0 Red_0.
-    apply sred. apply context_red_lambda. trivial.
+    move => t u Red_0.
+    apply Bsingle. apply context_red_lambda. trivial.
+    move => t u v _ Red_0 _ Red_1.
+    apply (Bconcat (lambda t) (lambda u) (lambda v)); trivial.
 Qed.
 
 (** On définit ici une relation plus fine que la beta_reduction,
@@ -122,22 +131,12 @@ Proof.
   apply context_red_l. trivial.
 Qed.
 
-(* Lemma BetaConcat : forall t u v : lambdaTermeN, t beta->* u -> u beta->* v -> t beta->* v.
-Proof.
-  move => t u v H.
-  induction H.
-  auto.
-  move => H'. apply (IHbeta_red H').
-  apply sred. *)
-(* 
 Lemma kv_red_included_in_beta_red :
   forall t_0 t_1 : lambdaTermeN, (t_0 s->* t_1) -> (t_0 beta->* t_1).
 Proof.
-  apply krivine_red_ind.
-  all : move => t.
-  apply refl.
-  move => u. move => KvRed. apply (sred t u u). apply kv_sred_included_in_beta_sred. trivial.
-    apply refl.
-  move => u v. move => KvRed BetaRed KvRed' BetaRed'.
-  apply 
-Qed. *)
+  move => t_0 t_1 KvRed.
+  induction KvRed.
+    + constructor 1.
+    + constructor 2. apply kv_sred_included_in_beta_sred. trivial.
+    + apply (Bconcat t u v); trivial.
+Qed.
