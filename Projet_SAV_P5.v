@@ -116,7 +116,7 @@ Qed.
 
 Lemma correctness_preserved:
   forall ks_0 ks_1: krivineState,
-    (ks_0 km-> ks_1) -> state_correctness ks_0 ->  state_correctness ks_1.
+    (ks_0 km-> ks_1) -> state_correctness ks_0 -> state_correctness ks_1.
 Proof.
   intro ks; case ks; clear ks.
   intro p; case p; clear p.
@@ -175,16 +175,16 @@ Proof.
     repeat split.
 
     apply code_correctness_propagation_grab.
-
     trivial.
 
     apply top_is_correct.
-
     all : trivial.
 Qed.
 
 
-Lemma tau_inner_krivine_sred: forall s : stack, forall u v : lambdaTermeN, krivine_sred u v -> krivine_sred (tau_inner s u) (tau_inner s v).
+Lemma tau_inner_krivine_sred:
+  forall s : stack, forall u v : lambdaTermeN,
+    u s-> v -> (tau_inner s u) s-> (tau_inner s v).
 Proof.
     induction s.
     simpl.
@@ -197,8 +197,9 @@ Proof.
     trivial.
 Qed.
 
-Require Import Arith.
-Theorem trans_is_krivine_reduce: forall ks1 ks2 : krivineState, transitionFunction ks1 = Some ks2 -> state_correctness ks1 -> krivine_sred (tau ks1) (tau ks2) \/ tau ks1 = tau ks2.
+Theorem trans_is_krivine_reduce:
+  forall ks1 ks2 : krivineState,
+    ks1 km-> ks2 -> state_correctness ks1 -> ((tau ks1) s-> (tau ks2)) \/ tau ks1 = tau ks2.
 Proof.
   intro ks1; case ks1; clear ks1.
   intro p; case p; clear p.
@@ -206,98 +207,85 @@ Proof.
   intro ks2; case ks2; clear ks2.
   intro p; case p; clear p.
   intro c0; intro s1; intro s2.
-  case c; clear c.
-  all : simpl.
-  + intro n.
-    case n; clear n.
-    2: intro n.
-    all : case s.
-    all : try discriminate.
-    all : intro p; case p; clear p.
-    all : intro c; intro s3; intro s4.
-    all : intro Eq.
-    suff : c = c0 /\ s3 = s1 /\ s0 = s2.
-    2 : apply some_triple_to_eq; trivial.
-    2 : suff : Access n = c0 /\ s4 = s1 /\ s0 = s2.
-    3 : apply some_triple_to_eq; trivial.
-    all : move => [Eq1 [Eq2 Eq3]].
-    all : rewrite <- Eq1, <- Eq2, <- Eq3.
-    all : clear Eq Eq1 Eq2 Eq3 c0 s1 s2.
-    all : intro H.
-    all : right.
-    all : unfold tau_tuple.
-    all : simpl.
+  intro H.
+  inversion H.
+  + 
+
+    intro SC.
+    right.
+    simpl.
+    unfold tau_tuple.
+    simpl.
     reflexivity.
 
-    elim H.
-    intro H0; intro H1.
-    unfold code_correctness in H0.
-    simpl in H0.
-    unfold hasAllFreeVarUnder in H0.
-    simpl in H0.
+  + case p.
+    clear H H1 H2 H3 H4 H5 H6 p s_0 s_1 s0 c s c0.
+    intro c; intro e.
 
-    rewrite <- tau_stack_length in H0.
-    Check PeanoNat.Nat.ltb_lt.
+    intro SC.
+    inversion SC.
+    destruct H0.
+    right.
 
-    assert (n <? length (tau_stack s4) = true) as Eq.
-    rewrite (PeanoNat.Nat.ltb_lt); trivial.
-    lia.
-    rewrite Eq; clear Eq.
+    unfold tau.
+    unfold tau_tuple.
+    simpl.
 
-    assert (S n <? S (length (tau_stack s4)) = true) as Eq.
-    rewrite (PeanoNat.Nat.ltb_lt); trivial.
-    lia.
-    rewrite Eq; clear Eq.
+    unfold code_correctness in H.
+    unfold hasAllFreeVarUnder in H.
+    simpl in H.
 
-    replace (n - 0) with n.
-    2 : lia.
+    rewrite <- tau_stack_length in H.
+
+
+    suff : (Nat.ltb n (length (tau_stack s1)) = true).
+    intro Eq; rewrite Eq; clear Eq.
+
+    suff : (Nat.ltb (S n) (S (length (tau_stack s1))) = true).
+    intro Eq; rewrite Eq; clear Eq.
     
-    assert (List.nth n (tau_stack s4) (var (S n)) = List.nth n (tau_stack s4) (var n)).
+    replace (n - 0) with n.
+
+    3-4: rewrite (PeanoNat.Nat.ltb_lt); trivial.
+    2-4: lia.
+    
+    assert (List.nth n (tau_stack s1) (var (S n)) = List.nth n (tau_stack s1) (var n)).
     apply List.nth_indep.
     lia.
 
     rewrite H2.
     reflexivity.
 
-  + intro c.
-    case s0; clear s0.
-    discriminate.
-    intro p; case p; clear p.
-    intro c1; intro s0; intro s3.
-    simpl.
-    intro SomeEq.
-    suff : c = c0 /\ (c1, s0) # s = s1 /\ s3 = s2.
-    2: apply some_triple_to_eq; auto.
-    move => [Eq1 [Eq2 Eq3]].
-    rewrite <- Eq1; rewrite <- Eq2; rewrite <- Eq3.
-    clear SomeEq Eq1 Eq2 Eq3 c0 s1 s2.
+  + 
+    intro H7.
+    inversion H7.
 
-    move => [_ [H2 _]].
+    right.
+    unfold tau.
+    simpl.
+    suff : tau_tuple (Push c_0; c0) s1 = app (tau_tuple c0 s1) (tau_tuple c_0 s1).
+    intro Eq; rewrite Eq; trivial.
+
+
+    unfold tau_tuple.
+    simpl.
+    reflexivity.
+
+  + intro H7.
+    inversion H7.
     left.
+
+    unfold tau.
+    simpl.
+    case p.
+    intro c2; intro s4.
 
     apply tau_inner_krivine_sred.
     apply grab_krivine_sred.
 
     apply stack_correctness_is_no_free.
+    elim H8.
     trivial.
-
-  + intro c; intro c1; intro Eq.
-    suff : c1 = c0 /\ s = s1 /\ (c, s) # s0 = s2.
-    2: apply some_triple_to_eq; auto.
-    move => [Eq1 [Eq2 Eq3]].
-    rewrite <- Eq1, <- Eq2, <- Eq3.
-    clear Eq1 Eq2 Eq3 Eq c0 s1 s2.
-    move => [H [H0 H1]].
-    right.
-    simpl.
-
-    suff : tau_tuple (Push c; c1) s = app (tau_tuple c1 s) (tau_tuple c s).
-    intro Eq; rewrite Eq.
-    reflexivity.
-    
-    unfold tau_tuple.
-    simpl.
-    reflexivity.
 Qed.
 
 Lemma lambdaTerme_code_correctness : forall u : lambdaTermeN, isClosed u <-> state_correctness (comp_glob u).
