@@ -12,22 +12,14 @@ Proof.
         apply Krefl.
         trivial.
     + split.
-        pose Equiv := transitionRelation_is_transitionFunction ks_0 ks_1.
-        case Equiv.
-        intro Eq1. intro Eq2.
-        pose Eq := Eq2 H.
-        pose Formula := trans_is_krivine_reduce ks_0 ks_1 Eq StateC.
+        pose Formula := trans_is_krivine_reduce ks_0 ks_1 H StateC.
         case Formula.
         intro H0.
-        apply (Ksingle (tau ks_0) (tau ks_1)). trivial.
+        exact (Ksingle (tau ks_0) (tau ks_1) H0).
 
         intro H0; rewrite H0; apply Krefl.
 
-        apply (correctness_preserved ks_0 ks_1).
-        trivial.
-
-        apply transitionRelation_is_transitionFunction.
-        trivial.
+        exact (correctness_preserved ks_0 ks_1 H StateC).
 
     + split.
 
@@ -36,7 +28,7 @@ Proof.
         all : elim H1; intro H2; intro StateC2.
         trivial.
         all : pose H3 := IHtransitionRelationExt2 StateC2.
-        all : elim H3; intro H4; intro H5.
+        all : elim H3.
         all : trivial.
 Qed.
 
@@ -197,7 +189,10 @@ Proof.
     trivial.
 Qed.
 
-Lemma propagation_1: forall ks_0 ks_1: krivineState,
+Lemma propagation_1: forall ks_0 ks_1 : krivineState
+    (ks_0 km-> ks_1) -> tau ks_0 = tau ks_1 \/ tau ks_0 s-> ks_1. 
+
+Lemma propagation_2: forall ks_0 ks_1: krivineState,
     (ks_0 km->* ks_1) -> 
         let (p0, s0) := ks_0 in let (c0, e0) := p0 in
         forall ks_2 : krivineState, comp_glob (tau ks_0) = ks_2 ->
