@@ -78,10 +78,10 @@ Proof.
 Qed.
 
 Lemma code_correctness_propagation_grab:
-  forall (c c0: codeBloc), forall (e s: stack),
-    code_correctness (Grab; c) s -> code_correctness c ((c0, e) # s).
+  forall c : codeBloc, forall s: stack, forall p : codeBloc * stack,
+    code_correctness (Grab; c) s -> code_correctness c (p # s).
 Proof.
-  move => c c0 e s.
+  move => c s p.
   unfold code_correctness; simpl.
   intro H.
   replace (S (size s)) with (size s + 1).
@@ -114,70 +114,73 @@ Proof.
   auto.
 Qed.
 
-Lemma correctness_preserved: forall ks: krivineState, forall nks: krivineState, state_correctness ks -> (transitionFunction ks = Some nks) -> state_correctness nks.
+Lemma correctness_preserved:
+  forall ks_0 ks_1: krivineState,
+    (ks_0 km-> ks_1) -> state_correctness ks_0 ->  state_correctness ks_1.
 Proof.
-  unfold krivineState.
-  intro ks; intro nks.
-  case ks; clear ks.
-  intro p; intro s.
-  case p; clear p.
-  intro c; intro e.
-  case nks; clear nks; intro p; intro s_1; case p; intro c0; intro e0.
-  case c; clear c.
-  + intro n.
-    simpl.
-    case e; clear e.
-    case n; discriminate.
-    intro p0; intro s0.
-    case n; clear n; simpl.
-    case p0; clear p0.
-    intro c; intro s1.
-    move => H1 Eq.
-    destruct H1 as [H0 [H1 H2]].
-    inversion H1.
-    apply (correctness_propagation c c0 s1 e0 s s_1).
+  intro ks; case ks; clear ks.
+  intro p; case p; clear p.
+  intro c0; intro e0; intro s0.
+
+  intro ks; case ks; clear ks.
+  intro p; case p; clear p.
+  intro c1; intro e1; intro s1.
+  intro H.
+  inversion H.
+  + simpl.
+    intro H7.
+    destruct H7; destruct H7. 
+    inversion H7.
     auto.
-    
-    case p0; clear p0.
-    move => c s1 n H Eq.
-    destruct H; destruct H0.
-    apply (correctness_propagation (Access n) c0 s0 e0 s s_1).
-    split.
-    pose H4 := code_correctness_propagation_access n s0 (c, s1) H.
-    trivial.
-    inversion H0.
-    auto.
-
-  + intro c.
-    case s; clear s.
-    simpl. 
-    discriminate.
-
-    move => p0 s.
-    case p0; clear p0.
-    move => c1 s0.
-    simpl.
-    move => [H [H0 H1]] Eq.
-    apply (correctness_propagation c c0 ((c1, s0) # e) e0 s s_1).
-    split.
-
-    apply code_correctness_propagation_grab; trivial.
-    inversion H1.
-    split; auto.
-    apply top_is_correct; trivial.
 
   + simpl.
-    move => c c1 [H [H0 H1]] Eq.
-    apply (correctness_propagation c1 c0 e e0 ((c, e) # s) s_1).
+
+    unfold code_correctness.
+    simpl.
+    unfold hasAllFreeVarUnder.
+    simpl.
+
+    intro H7.
+    destruct H7; destruct H7.
+    inversion H7.
+    split; auto.
+    lia.
+    
+  + intro H7.
+
+    destruct H7; destruct H7.
+
+    unfold state_correctness.
     split.
-    apply (code_correctness_propagation_push2 c c1 e); trivial.
-    repeat split.
+    apply (code_correctness_propagation_push2 c_0 c1 e1).
+    trivial.
+    
+    split; trivial.
+
+    apply top_is_correct.
+    
     all : trivial.
-  
-    apply stack_correctness_propagation.
+
+    apply (code_correctness_propagation_push1 c_0 c1 e1).
+    trivial.
+
+  + unfold state_correctness.
+
+    case p; intro c2; intro e2.
+
+    intro H7.
+    destruct H7; destruct H7.
+    inversion H8.
+
     repeat split.
+
+    apply code_correctness_propagation_grab.
+
+    trivial.
+
+    apply top_is_correct.
+
     all : trivial.
-    apply (code_correctness_propagation_push1 c c1 e H).
 Qed.
 
 
