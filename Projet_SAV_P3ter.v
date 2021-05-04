@@ -106,6 +106,55 @@ Proof.
         move => KmTrans. inversion KmTrans. reflexivity.
 Qed.
 
+Lemma is_functional_transitionRelation :
+  forall ks_0 ks_1 ks_2 : krivineState, ks_0 km-> ks_1 -> ks_0 km-> ks_2 -> (ks_1 = ks_2).
+Proof.
+  move => ks_0 ks_1 ks_2 T01 T02.
+  pose Eq0 := (transitionRelation_is_transitionFunction ks_0 ks_1).2 T01.
+  pose Eq1 := (transitionRelation_is_transitionFunction ks_0 ks_2).2 T02.
+  assert (Some ks_1 = Some ks_2). rewrite <-Eq0, <-Eq1 => //.
+  congruence.
+Qed.
+
+Lemma functionality_1N :
+  forall ks_0 ks_1 : krivineState, ks_0 km->* ks_1 ->
+    forall ks_2 : krivineState, ks_0 km-> ks_2 -> ( ks_1 = ks_0 \/ ks_1 = ks_2 \/ ks_2 km->* ks_1 ).
+Proof.
+  apply: transitionRelationExt_ind.
+    + move => ks_0 ks_1 _; left => //.
+    + move => ks_0 ks_1 T01 ks_2 T02.
+      rewrite (is_functional_transitionRelation _ _ _ T01 T02).
+      right; left; trivial.
+    + move => ks_0 ks_1 ks_2 T01S IH01 T12S IH12 ks_3 T03. 
+      case: (IH01 ks_3 _) => //.
+        - move => Eq10; rewrite <-Eq10 in T03. clear IH01.
+          pose H := IH12 ks_3 T03.
+          case H => //.
+          move => Eq21; left; rewrite Eq21 => //.
+          move => HR; right => //.
+        - case.
+          move => <-; right; right => //.
+          move => T31S; right; right; apply (concat_km _ _ _ T31S T12S).
+Qed.
+
+Lemma single_path :
+  forall ks_0 ks_1 : krivineState, ks_0 km->* ks_1 ->
+    forall ks_2 : krivineState, ks_0 km->* ks_2 -> ( (ks_2 km->* ks_1) \/ (ks_1 km->* ks_2) ).
+Proof.
+  apply: transitionRelationExt_ind.
+    + move => ks_0 ks_1 T01S; right => //.
+    + move => ks_0 ks_1 T01 ks_2 T02S.
+      case: (functionality_1N ks_0 ks_2 T02S ks_1 T01).
+        move => ->; left; apply: single_km => //.
+        move => H; case H.
+        move => ->; left; apply: refl_km => //.
+        auto.
+    + move => ks_0 ks_1 ks_2 T01S IH01 T12S IH12 ks_3 T03S.
+      case: (IH01 ks_3 T03S).
+        move => T31S; left; apply: (concat_km ks_3 ks_1 ks_2 _ _) => //.
+        move => T13S; exact: (IH12 ks_3 T13S).
+Qed. 
+          
 Fixpoint comp (t: lambdaTermeN) : codeBloc :=
   match t: lambdaTermeN return codeBloc with
     | var n => Access n
