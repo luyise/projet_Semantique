@@ -1,11 +1,11 @@
-Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
+(*Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
 Require Import Lia.
 Require Import ssreflect.
 Require Import ssrfun.
 Require Import Coq.ssr.ssrbool.
 
 Load Projet_SAV_P1.
-
+*)
 Definition eqb :=
   fix eqb (t u : lambdaTermeN) {struct t} : bool :=
     match t with

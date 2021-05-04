@@ -16,7 +16,7 @@ Inductive stack_correctness : stack -> Prop :=
     | empty_is_correct : stack_correctness empty_stack
     | top_is_correct : forall c_0 : codeBloc, forall e_0 tl : stack,
         (code_correctness c_0 e_0) -> (stack_correctness e_0) -> (stack_correctness tl)
-        -> stack_correctness ((c_0, e_0) # tl).
+        -> stack_correctness ($ (c_0, e_0) # tl).
 
 Theorem stack_correctness_is_no_free: forall e: stack,
     stack_correctness e ->  List.Forall (fun t => C[ 0 ]( t )) (tau_stack e).
@@ -59,7 +59,7 @@ Qed.
 
 Lemma stack_correctness_propagation:
   forall c: codeBloc, forall (e s : stack),
-    stack_correctness s /\ stack_correctness e /\ code_correctness c e -> stack_correctness ((c, e) # s).
+    stack_correctness s /\ stack_correctness e /\ code_correctness c e -> stack_correctness ($ (c, e) # s).
 Proof.
   move => c e s H.
   destruct H; destruct H0.
@@ -68,20 +68,20 @@ Proof.
 Qed.
 
 Lemma code_correctness_propagation_access:
-  forall n: nat, forall s: stack, forall p: codeBloc * stack,
-    code_correctness (Access (S n)) (p # s) -> code_correctness (Access n) s.
+  forall n: nat, forall c : codeBloc, forall  e s: stack,
+    code_correctness (Access (S n)) ($ (c, e) # s) -> code_correctness (Access n) s.
 Proof.
-  intro n; intro s; intro p.
+  intro n; intro c; intro e; intro s.
   unfold code_correctness; simpl.
   unfold hasAllFreeVarUnder; simpl.
   lia.
 Qed.
 
 Lemma code_correctness_propagation_grab:
-  forall c : codeBloc, forall s: stack, forall p : codeBloc * stack,
-    code_correctness (Grab; c) s -> code_correctness c (p # s).
+  forall c c2: codeBloc, forall e2 s: stack,
+    code_correctness (Grab; c) s -> code_correctness c ($ (c2, e2) # s).
 Proof.
-  move => c s p.
+  move => c c2 e2 s.
   unfold code_correctness; simpl.
   intro H.
   replace (S (size s)) with (size s + 1).
@@ -166,7 +166,7 @@ Proof.
 
   + unfold state_correctness.
 
-    case p; intro c2; intro e2.
+    (*case p; intro c2; intro e2.*)
 
     intro H7.
     destruct H7; destruct H7.
@@ -190,9 +190,8 @@ Proof.
     simpl.
     trivial.
     simpl.
-    case p.
-    intro c; intro s0; intro u; intro v; intro H.
-    apply IHs.
+    intro u; intro v; intro H.
+    apply IHs2.
     apply Kcontext_red_l.
     trivial.
 Qed.
@@ -218,9 +217,7 @@ Proof.
     simpl.
     reflexivity.
 
-  + case p.
-    clear H H1 H2 H3 H4 H5 H6 p s_0 s_1 s0 c s c0.
-    intro c; intro e.
+  + clear H H1 H2 H3 H4 H5 H6 s_0 s_1 s0 c s c0.
 
     intro SC.
     inversion SC.
@@ -277,8 +274,6 @@ Proof.
 
     unfold tau.
     simpl.
-    case p.
-    intro c2; intro s4.
 
     apply tau_inner_krivine_sred.
     apply grab_krivine_sred.
@@ -289,6 +284,7 @@ Proof.
 Qed.
 
 Lemma lambdaTerme_code_correctness : forall u : lambdaTermeN, isClosed u <-> state_correctness (comp_glob u).
+Proof.
     split.
     unfold comp_glob.
     simpl.

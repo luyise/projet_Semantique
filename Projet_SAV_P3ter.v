@@ -13,17 +13,19 @@ Inductive codeBloc :=
 (* Définition de la pile de la machine de Krivine *)
 Inductive stack := 
     | empty_stack : stack
-    | const_stack : (codeBloc * stack) -> stack -> stack.
+    | const_stack : codeBloc -> stack -> stack -> stack.
+
 
 Notation "'Grab' ; tl " := (grab tl) (at level 20).
 Notation "'Push' c ; tl " := (push c tl) (at level 20).
-Notation " p # s " := (const_stack p s) (at level 19).
-
+Notation " '$' ( c , e ) # s " := (const_stack c e s) (at level 19).
+Notation " '$' '_' # s " := (const_stack _ _ s) (at level 19, only parsing).
+Notation " '$' ( c , e ) # '_' " := (const_stack c e _) (at level 19, only parsing).
 
 Fixpoint size (e: stack) : nat :=
   match e return nat with
     | empty_stack => 0
-    | _ # tl => S (size tl)
+    | $ _ # tl => S (size tl)
 end.
 
 (* Définition de l'état de la machine de Krivine*)
@@ -32,20 +34,20 @@ Definition krivineState: Type := (codeBloc * stack * stack).
 (* Définition de la fonction transition *)
 Definition transitionFunction : krivineState -> option krivineState :=
   fun ks => match ks return option krivineState with 
-    | (Access 0, (c_0, e_0) # _, s) => Some (c_0, e_0, s)
-    | (Access (S n), _ # tl, s)     => Some (Access n, tl, s)
-    | (Push c_2; c, e, s)           => Some (c, e, (c_2, e) # s)
-    | (Grab; c, e, t # s)           => Some (c, t # e, s)
+    | (Access 0, $ (c_0, e_0) # _ , s) => Some (c_0, e_0, s)
+    | (Access (S n), $ _ # tl, s)     => Some (Access n, tl, s)
+    | (Push c_2; c, e, s)           => Some (c, e, $ (c_2, e) # s)
+    | (Grab; c, e, $ (c2, e2) # s)           => Some (c, $ (c2, e2) # e, s)
     | _ => None
 end.
 
 Reserved Notation " A km-> B " (at level 0).
 
 Inductive transitionRelation : krivineState -> krivineState -> Prop :=
-  | TAccess_O : forall c : codeBloc, forall e s_0 s_1 : stack, (Access 0, (c, e) # s_0, s_1) km-> (c, e, s_1)
-  | TAccess_S : forall n : nat, forall p : (codeBloc * stack), forall s_0 s_1 : stack, (Access (S n), p # s_0, s_1) km-> (Access n, s_0, s_1)
-  | TPush : forall c_0 c_1 : codeBloc, forall e s : stack, (Push c_0; c_1, e, s) km-> (c_1, e, (c_0, e) # s)
-  | TGrab : forall c : codeBloc, forall e s : stack, forall p : (codeBloc * stack), (Grab; c, e, p # s) km-> (c, p # e, s)
+  | TAccess_O : forall c : codeBloc, forall e s_0 s_1 : stack, (Access 0, $ (c, e) # s_0, s_1) km-> (c, e, s_1)
+  | TAccess_S : forall n : nat, forall c : codeBloc, forall e s_0 s_1 : stack, (Access (S n), $ (c, e) # s_0, s_1) km-> (Access n, s_0, s_1)
+  | TPush : forall c_0 c_1 : codeBloc, forall e s : stack, (Push c_0; c_1, e, s) km-> (c_1, e, $ (c_0, e) # s)
+  | TGrab : forall c c2: codeBloc, forall e e2 s : stack, (Grab; c, e, $ (c2, e2) # s) km-> (c, $ (c2, e2) # e, s)
 where
 " ks_0 km-> ks_1 " := (transitionRelation ks_0 ks_1).
 
@@ -67,26 +69,26 @@ Proof.
     * case c_0.
       + move => n. case n. case e_0.
         - simpl. discriminate.
-        - simpl. move => p. case p as [c_2 e_2]. move => s.
+        - simpl. move => c_2 e_2. move => s.
           move => Eq.
           assert (c_2 = c_1 /\ e_2 = e_1 /\ s_0 = s_1) as [Eq1 [Eq2 Eq3]].
           apply some_triple_to_eq. assumption.
           rewrite Eq1 Eq2 Eq3. apply TAccess_O.
         - move => n'. case e_0. simpl. discriminate.
-          move => p s. case p as [c_2 e_2]. simpl. move => Eq.
+          move => c_2 e_2 s. simpl. move => Eq.
           assert (Access n' = c_1 /\ s = e_1 /\ s_0 = s_1) as [Eq1 [Eq2 Eq3]].
           apply some_triple_to_eq. trivial.
           rewrite <-Eq1, <-Eq2, <-Eq3.
           apply TAccess_S.
       + move => c_2. case s_0.
         - move => Eq. simpl in Eq. discriminate.
-        - case p as [c_3 e_3] => s_2. simpl => Eq.
-          assert (c_2 = c_1 /\ (c_3, e_3) # e_0 = e_1 /\ s_2 = s_1) as [Eq1 [Eq2 Eq3]].
+        - move => c_3 e_3 s_2. simpl => Eq.
+          assert (c_2 = c_1 /\ $ (c_3, e_3) # e_0 = e_1 /\ s_2 = s_1) as [Eq1 [Eq2 Eq3]].
           apply some_triple_to_eq. trivial.
           rewrite <-Eq1, <-Eq2, <-Eq3.
           apply TGrab.
       + move => c_2 c_3. simpl => Eq.
-        assert (c_3 = c_1 /\ e_0 = e_1 /\ (c_2, e_0) # s_0 = s_1) as [Eq1 [Eq2 Eq3]].
+        assert (c_3 = c_1 /\ e_0 = e_1 /\ $ (c_2, e_0) # s_0 = s_1) as [Eq1 [Eq2 Eq3]].
         apply some_triple_to_eq. trivial.
         rewrite <-Eq1, <-Eq2, <-Eq3.
         apply TPush.
@@ -94,12 +96,12 @@ Proof.
     * case c_0.
       + move => n. case n.
         - case e_0. simpl. move => KmTrans. inversion KmTrans.
-          move => p s_3. case p as [c_2 s_2]. simpl. move => KmTrans.
+          move => c_2 s_2 s_3. simpl. move => KmTrans.
           inversion KmTrans. reflexivity.
         - move => n' KmTrans. inversion KmTrans. simpl. reflexivity.
       + move => c_2. case s_0.
         - simpl. move => KmTrans. inversion KmTrans.
-        - move => p s. case p as [c_3 e_3]. simpl.
+        - move => c_3 e_3 s. simpl.
           move => KmTrans. inversion KmTrans.
           reflexivity.
       + move => c_2 c_3. simpl.
@@ -127,11 +129,11 @@ end.
 Fixpoint tau_stack (s: stack) : list lambdaTermeN :=
   match s with
     | empty_stack => nil
-    | (c_0, e_0) # e_1 => (subst_list (tau_code c_0) 0 (tau_stack e_0)) :: (tau_stack e_1)
+    | $ (c_0, e_0) # e_1 => (subst_list (tau_code c_0) 0 (tau_stack e_0)) :: (tau_stack e_1)
 end.
 
 Lemma tau_stack_formula: forall (c_0: codeBloc), forall (e_0 e_1 : stack),
-    tau_stack ((c_0, e_0) # e_1) = List.cons (subst_list (tau_code c_0) 0 (tau_stack e_0)) (tau_stack e_1).
+    tau_stack ($ (c_0, e_0) # e_1) = List.cons (subst_list (tau_code c_0) 0 (tau_stack e_0)) (tau_stack e_1).
 Proof.
   move => c_0 e_0 e_1.
   simpl.
@@ -145,11 +147,7 @@ Proof.
   simpl.
   trivial.
   simpl.
-  case p.
-  intro c.
-  intro s0.
-  simpl.
-  rewrite IHs.
+  rewrite IHs2.
   trivial.
 Qed.
 
@@ -158,7 +156,7 @@ Definition tau_tuple : codeBloc -> stack -> lambdaTermeN :=
 
 Fixpoint tau_inner (s: stack) (n: lambdaTermeN): lambdaTermeN :=
   match s return lambdaTermeN with
-    | (c, e) # tl => tau_inner tl (app n (tau_tuple c e))
+    | $ (c, e) # tl => tau_inner tl (app n (tau_tuple c e))
     | empty_stack => n
 end.
 
@@ -195,7 +193,7 @@ Proof.
 Qed.
 
 Lemma grab_krivine_sred : forall c c1 : codeBloc, forall s s1 : stack,
-  List.Forall (fun t => C[0](t)) (tau_stack s) -> (app (tau_tuple (grab c) s) (tau_tuple c1 s1)) s-> (tau_tuple c ((c1, s1) # s)).
+  List.Forall (fun t => C[0](t)) (tau_stack s) -> (app (tau_tuple (grab c) s) (tau_tuple c1 s1)) s-> (tau_tuple c ($ (c1, s1) # s)).
 Proof.
   move => c c1 s s1 Hl.
   unfold tau_tuple.
