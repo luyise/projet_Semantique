@@ -156,6 +156,22 @@ Proof.
         move => T31S; left; apply: (concat_km ks_3 ks_1 ks_2 _ _) => //.
         move => T13S; exact: (IH12 ks_3 T13S).
 Qed. 
+
+Lemma is_terminal : forall ks_0 : krivineState,
+  transitionFunction ks_0 = None -> forall ks_1 : krivineState, (ks_0 km->* ks_1) -> ks_0 = ks_1.
+Proof.
+  intro ks_0; intro trans; intro ks_1; intro trans2.
+  move : trans.
+  induction trans2.
+  trivial.
+  apply transitionRelation_is_transitionFunction in H.
+  congruence.
+  intro H.
+  assert (ks_0 = ks_1) as Eq.
+  exact (IHtrans2_1 H).
+  rewrite <-Eq in IHtrans2_2.
+  exact (IHtrans2_2 H).
+Qed.
           
 Fixpoint comp (t: lambdaTermeN) : codeBloc :=
   match t: lambdaTermeN return codeBloc with

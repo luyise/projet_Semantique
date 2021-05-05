@@ -665,6 +665,30 @@ Proof.
     assumption.
 Qed.
 
+Lemma lemma02 : forall t_0 t_1: lambdaTermeN,
+    t_0 s->* t_1 -> t_0 <> t_1 -> forall t_2 : lambdaTermeN, t_0 s-> t_2 -> t_0 = t_2 -> False.
+Proof.
+    intro t_0; intro t_1; intro trans.
+    induction trans.
+    auto.
+
+    intro notEq; intro t_2.
+    intro trans2.
+    intro Eq.
+    pose Eq2 := kv_red_is_functionnal t u t_2 (conj H trans2).
+    congruence.
+
+    intro notEq.
+    case (decidable_lambda_terme_equality t u).
+    intro Eq.
+    rewrite Eq; rewrite Eq in notEq.
+    exact (IHtrans2 notEq).
+    assumption.
+Qed.
+
+Lemma lemma02bis : forall ks_0 ks_1 : krivineState,
+    ks_0 km->* ks_1 -> 
+
 Lemma propagation_3 : forall ks : krivineState,
     state_correctness ks ->
     (exists t: lambdaTermeN, ((tau ks) s-> t))
@@ -853,11 +877,126 @@ Proof.
     simpl in ind2.
     exact (ind2 NotEq sC).
 
+    intro transFx0.
+
+    destruct H4.
+    assert (forall ks_1 : krivineState, ks km->* ks_1 -> ks_1 km->* x0) as isTerm.
+    intro ks_1; intro trans_ks1.
+    pose single_path := single_path ks x0 H4 ks_1 trans_ks1.
+    case single_path; trivial.
+    intro trans2.
+    pose isTerm := is_terminal x0 transFx0 ks_1 trans2.
+    rewrite isTerm.
+    apply refl_km.
+
+    clear H3 H5 H2 H H6 H1.
+    clear next Eq notEq H0 x.
+    move : isTerm tauKs_is_tau_x0 transFx0 ExistwithNotEq sC.
+    induction H4.
+    all : intro Forall; intro tauEq; intro isTerm; intro notForall; intro sC.
+    pose isTerm2 := is_terminal ks isTerm.
+    suff : (forall ks_1 : krivineState, ks km->* ks_1 -> tau ks = tau ks_1).
+    apply lemma00bis in notForall.
+    assert (not (forall ks_1 : krivineState, ks km->* ks_1 -> tau ks = tau ks_1)).
+    intro H.
+    pose T := (propagation_2 ks sC H).
+    auto.
+    congruence.
+    intro ks_1; intro trans.
+    rewrite (isTerm2 ks_1 trans).
+    reflexivity.
+
+    suff :  (forall ks_2 : krivineState, ks_0 km->* ks_2 -> tau ks_0 = tau ks_2).
+    suff :  (not (forall ks_2 : krivineState, ks_0 km->* ks_2 -> tau ks_0 = tau ks_2)).
+    congruence.
+    intro H0.
+    pose T := (propagation_2 ks_0 sC H0).
+    apply lemma00 in T.
+    auto.
+
+    intro ks_2; intro Trans2.
+    suff : (ks_2 = ks_0 \/ ks_2 = ks_1).
+    intro Cases; case Cases; clear Cases.
+    1-2 : intro Eq3; rewrite Eq3; auto.
+
+    clear notForall.
+    induction Trans2.
+    auto.
+    apply transitionRelation_is_transitionFunction in H.
+    apply transitionRelation_is_transitionFunction in H0.
+    rewrite H0 in H.
+    inversion H.
+    auto.
+
+    pose Cases := IHTrans2_1 H Forall tauEq.
+    case Cases; clear Cases; auto.
+    intro Eq.
+    rewrite Eq in IHTrans2_2.
+    exact (IHTrans2_2 H Forall tauEq sC).
+    
+    intro two_is_one.
+    rewrite two_is_one in Trans2_2.
+    pose isTerm2 := is_terminal ks_1 isTerm ks_3 Trans2_2.
+    auto.
+
+    case (decidable_lambda_terme_equality (tau ks_0) (tau ks_1)).
+    intro Eq.
+    rewrite <-Eq in IHtransitionRelationExt2.
+    pose Forall2 := is_terminal ks_2 isTerm.
+    pose Forall3 := single_path ks_1 ks_2 H4_0.
+    assert (forall ks_3 : krivineState, ks_1 km->* ks_3 -> ks_3 km->* ks_2) as Forall4.
+    intro ks_3; intro trans.
+    case (Forall3 ks_3 trans).
+    trivial.
+    intro trans2.
+    rewrite (Forall2 ks_3 trans2).
+    apply refl_km.
+
+    assert (not (forall ks_1 : krivineState, ks_0 km->* ks_1 -> tau ks_0 = tau ks_1)).
+    intro H.
+
+    pose H0 := krivine_trans_is_stategy ks_0 ks_1 sC H4_.
+    destruct H0.
+    
+    pose IH := IHtransitionRelationExt2 Forall4 tauEq isTerm notForall H1.
+    
+    inversion IH.
+    destruct H2.
+    inversion notForall.
+    destruct H4.
+
+    apply (lemma02 (tau ks_0) x0 H4 H5 (tau x) H3).
+    apply H.
+    exact (concat_km ks_0 ks_1 x H4_ H2).
+
+    suff : state_correctness ks_1.
+    intro sC2.
+    pose IH1 := IHtransitionRelationExt2 Forall4 tauEq isTerm notForall sC2.
+    inversion IH1.
+    exists x.
+    destruct H0.
+    split; trivial.
+    apply (concat_km _ ks_1 _ H4_ H0).
+    pose Suff := krivine_trans_is_stategy ks_0 ks_1 sC H4_.
+    destruct Suff.
+    assumption.
+
+    intro notEq.
+    pose Concl := lemma02bis ks_0 ks_1 Trans notEq.
+
+    
+
+    
+    
+    
+
+
     suff : (forall ks_1 : krivineState, ks km->* ks_1 -> tau ks = tau ks_1).
     congruence.
 
     intro ks_1.
     intro T.
+
 Admitted.
 
 Lemma propagation_4 : forall t0 t1: lambdaTermeN, t0 s->* t1 ->
