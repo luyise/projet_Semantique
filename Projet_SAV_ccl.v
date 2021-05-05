@@ -687,7 +687,38 @@ Proof.
 Qed.
 
 Lemma lemma02bis : forall ks_0 ks_1 : krivineState,
-    ks_0 km->* ks_1 -> 
+    ks_0 km->* ks_1 -> state_correctness ks_0 -> tau ks_0 <> tau ks_1 ->
+    (exists ks_2 : krivineState, ks_0 km->* ks_2 /\ (tau ks_0) s-> (tau ks_2)).
+Proof.
+    intro ks_0; intro ks_1; intro trans.
+    induction trans.
+    congruence.
+    intro sC.
+    intro notEq.
+    exists ks_1.
+    split.
+    apply single_km; assumption.
+    pose Ccl := trans_is_krivine_reduce ks_0 ks_1 H sC.
+    case Ccl; trivial.
+    congruence.
+
+    intro sC.
+    intro notEq1.
+    case (decidable_lambda_terme_equality (tau ks_0) (tau ks_1)).
+    intro Eq.
+    rewrite <-Eq in IHtrans2.
+    pose sC2 := krivine_trans_is_stategy ks_0 ks_1 sC trans1.
+    destruct sC2.
+    pose Exists := (IHtrans2 H0 notEq1).
+    inversion Exists.
+    exists x.
+    destruct H1.
+    split; trivial.
+    apply (concat_km ks_0 ks_1 x); assumption.
+
+    intro notEq2.
+    apply IHtrans1; assumption.
+Qed.
 
 Lemma propagation_3 : forall ks : krivineState,
     state_correctness ks ->
@@ -982,22 +1013,8 @@ Proof.
     assumption.
 
     intro notEq.
-    pose Concl := lemma02bis ks_0 ks_1 Trans notEq.
-
-    
-
-    
-    
-    
-
-
-    suff : (forall ks_1 : krivineState, ks km->* ks_1 -> tau ks = tau ks_1).
-    congruence.
-
-    intro ks_1.
-    intro T.
-
-Admitted.
+    exact (lemma02bis ks_0 ks_1 H4_ sC notEq).
+Qed.
 
 Lemma propagation_4 : forall t0 t1: lambdaTermeN, t0 s->* t1 ->
     forall ks : krivineState,  state_correctness ks -> (tau ks) = t0 -> (exists ks_1 : krivineState, ks km->* ks_1 /\ tau ks_1 = t1).
