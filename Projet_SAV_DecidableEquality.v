@@ -1,11 +1,15 @@
-(*Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
+(*
 Require Import Lia.
 Require Import ssreflect.
 Require Import ssrfun.
 Require Import Coq.ssr.ssrbool.
 
+
+Add LoadPath "C:\Users\Hp\Documents\Coq\projet_Semantique" as CoqDirectory.
+Add LoadPath "/Users/samuel/Documents/Documents-L3/PolyCours/S2/Sem/projet_Semantique" as CoqDirectory.
 Load Projet_SAV_P1.
 *)
+
 Definition eqb :=
   fix eqb (t u : lambdaTermeN) {struct t} : bool :=
     match t with
@@ -42,7 +46,7 @@ Proof.
           assert (t2 = u2) as Eqt2u2.
           apply IHt2 => //.
           rewrite Eqt1u1 Eqt2u2; reflexivity.
-    + move => H. rewrite H. clear H t. induction u => //. Print eq.
+    + move => H. rewrite H. clear H t. induction u => //.
       simpl. pose Eqp := (snd (PeanoNat.Nat.eqb_eq n n) (eq_refl n)); rewrite Eqp; reflexivity.
       simpl. apply /andP. split => //.
 Qed.

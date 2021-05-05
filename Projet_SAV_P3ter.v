@@ -60,8 +60,6 @@ Inductive transitionRelationExt : krivineState -> krivineState -> Prop :=
 where
 " ks_0 km->* ks_1 " := (transitionRelationExt ks_0 ks_1).
 
-Locate Some.
-
 Lemma transitionRelation_is_transitionFunction :
   forall ks_0 ks_1 : krivineState, transitionFunction ks_0 = Some ks_1 <-> ( ks_0 km-> ks_1 ).
 Proof.

@@ -198,8 +198,6 @@ Proof.
   apply lemma5; assumption.
 Qed.
 
-Print List.map.
-Print List.nth.
 
 (** - 4 *)
 
@@ -230,7 +228,6 @@ Proof.
   unfold andb.
   pose H := PeanoNat.Nat.le_gt_cases i x.
   case H.
-  Search "leb".
   destruct (PeanoNat.Nat.leb_le i x) as [_ Impl].
   move => Leix. rewrite (Impl Leix).
   destruct (PeanoNat.Nat.leb_gt (S x) i) as [_ Impl'].
@@ -349,7 +346,6 @@ Qed.
 (* On définit une proposition pour la preuve du lemme suivant *)
 Definition P i l := (forall t : lambdaTermeN, forall u_0 : lambdaTermeN,
   (t [ i <-- (u_0 :: l) ] = ( t [ (1+i) <-- l ] ) [ i <- List.hd (var i) (u_0 :: l) ])).
-Check P.
 
 Lemma lemma9 :
   forall x : nat, forall i : nat, (i = x) -> forall u : lambdaTermeN, (var x) [i <- u] = u.

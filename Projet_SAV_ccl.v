@@ -396,7 +396,6 @@ Proof.
     unfold state_correctness.
     split.
     2 : split; trivial.
-    Check code_correctness_propagation_push2.
     apply (code_correctness_propagation_push2 c0_1); trivial.
 
     inversion H0.
@@ -415,7 +414,6 @@ Proof.
     intro H.
     intro ks_1.
     intro H0.
-    Check krivine_trans_is_stategy.
     pose t := krivine_trans_is_stategy ks ks_1 sC H0.
     destruct t.
     pose H3 := H (tau ks_1) H1.
