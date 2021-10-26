@@ -1061,3 +1061,6 @@ Proof.
     apply (concat_km ks x x0); assumption.
 Qed.
 
+Check compilation_correctness.
+
+Check propagation_4.

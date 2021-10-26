@@ -106,6 +106,7 @@ Proof.
       apply lemma13. 2, 3 : lia. exact Hl.
     + simpl.
       move => Hu Hl.
+      Check lemma23.
       rewrite lemma23. exact Hl.
       unfold hasAllFreeVarUnder in Hu. simpl in Hu.
       unfold isClosed. unfold hasAllFreeVarUnder. simpl. apply lemma27. trivial. trivial.
